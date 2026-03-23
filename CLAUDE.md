@@ -22,7 +22,7 @@
 ├── SKILL.md               ← 메인 스킬 (리포팅 전체 흐름, /report로 호출)
 ├── package.json           ← 패키지 정의
 ├── scripts/
-│   ├── check-env.js       ← 환경 확인 (첫 실행 시)
+│   ├── check-env.js       ← 환경 확인 + 자동 업데이트 체크 (첫 실행 시)
 │   ├── parse-sheet.js     ← 공용 시트 파싱 모듈
 │   ├── calculate.js       ← 객관식 점수 계산
 │   └── verify.js          ← Ralph 루프 자동 검증 (7개 항목 × 시트별 루프)
