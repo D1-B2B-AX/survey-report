@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>만족도 리포팅 결과</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; background: #f5f5f5; color: #333; }
+    .container { max-width: 900px; margin: 20px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 30px; }
+
+    /* 헤더 — 기업명/과정명 강조 */
+    .header-area { margin-bottom: 24px; }
+    .company-name { font-size: 16px; color: #4A90D9; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 6px; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    .subtitle { color: #888; font-size: 13px; margin-bottom: 0; }
+
+    h2 { font-size: 18px; margin: 25px 0 10px; padding-bottom: 8px; border-bottom: 2px solid #4A90D9; color: #4A90D9; }
+    h3 { font-size: 15px; margin: 20px 0 8px; color: #555; }
+    h4 { font-size: 14px; margin: 12px 0 6px; color: #666; }
+
+    /* 안내 배너 */
+    .guide-banner { padding: 12px 16px; background: #FFF8E1; border: 1px solid #FFE082; border-radius: 6px; margin-bottom: 20px; font-size: 13px; line-height: 1.7; color: #5D4037; }
+    .guide-banner strong { color: #E65100; }
+    .guide-banner .example { color: #888; font-size: 12px; margin-top: 4px; }
+
+    /* 블록 검토 전체 설명 — sub-tab 위에 고정 */
+    .review-description { padding: 12px 16px; background: #F3F6FB; border-radius: 6px; margin-bottom: 12px; font-size: 13px; line-height: 1.7; color: #555; }
+
+    /* sub-tab별 맥락 설명 — 주관식/운영진 의견 등 중요 안내 */
+    .context-notice { padding: 8px 0 12px 0; margin-bottom: 8px; font-size: 13px; line-height: 1.7; color: #1A5276; font-weight: 500; }
+
+    /* 메인 탭 */
+    .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+    .tab { padding: 10px 24px; border: none; background: none; cursor: pointer; font-size: 14px; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+    .tab.active { color: #4A90D9; border-bottom-color: #4A90D9; font-weight: bold; }
+    .tab:hover { color: #4A90D9; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* sub-tab */
+    .sub-tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 1px solid #e0e0e0; }
+    .sub-tab { padding: 8px 18px; border: none; background: none; cursor: pointer; font-size: 13px; color: #999; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .sub-tab.active { color: #333; border-bottom-color: #4A90D9; font-weight: 600; }
+    .sub-tab:hover { color: #555; }
+    .sub-tab-content { display: none; }
+    .sub-tab-content.active { display: block; }
+
+    /* 블록 */
+    .sheet-section { margin-bottom: 30px; padding: 20px; background: #fafafa; border-radius: 6px; }
+    .block { margin: 15px 0; padding: 15px; background: #fff; border: 1px solid #eee; border-radius: 4px; }
+    .respondent-count { color: #666; margin-bottom: 15px; font-size: 14px; }
+
+    /* 테이블 */
+    table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+    th { background: #f0f4f8; padding: 8px 10px; text-align: left; border: 1px solid #ddd; font-weight: 600; }
+    td { padding: 8px 10px; border: 1px solid #eee; }
+    tr:hover { background: #f8f9fa; }
+
+    /* 주관식 — 유형별 구조 */
+    .category-group { margin: 16px 0; }
+    .category-title { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #4A90D9; }
+    .subcategory { margin: 8px 0 8px 8px; font-size: 13px; }
+    .subcategory-name { font-weight: 600; color: #333; }
+    .subcategory-summary { color: #444; font-size: 13px; line-height: 1.6; }
+
+    /* 운영진 의견 */
+    .opinion-text { padding: 12px 16px; background: #f8f9fa; border-left: 3px solid #4A90D9; margin: 8px 0; font-size: 13px; line-height: 1.8; }
+
+    /* 접기/펼치기 */
+    details { margin: 10px 0; }
+    summary { cursor: pointer; color: #4A90D9; font-size: 13px; padding: 5px 0; }
+    summary:hover { text-decoration: underline; }
+    .info { color: #888; font-size: 12px; margin: 5px 0; }
+
+    /* 근거 원문 영역 — 블록 검토에서 유형별 요약문 아래 */
+    .evidence-area { margin: 6px 0 12px 16px; padding: 10px 14px; background: #f9fafb; border-left: 2px solid #d0d7de; border-radius: 0 4px 4px 0; font-size: 12px; color: #555; }
+    .evidence-area li { padding: 4px 0; line-height: 1.6; list-style: none; }
+    .evidence-area .source { color: #888; font-size: 11px; }
+
+    /* 메일 미리보기 */
+    .mail-section { margin: 20px 0; }
+    .mail-preview { padding: 20px; border: 1px solid #ddd; border-radius: 4px; background: #fff; font-size: 13px; line-height: 1.8; }
+    .mail-preview table { margin: 10px 0; }
+    .mail-opinion { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e0e0e0; }
+
+    /* 복사 버튼 */
+    .copy-btn { margin-top: 10px; padding: 10px 24px; background: #4A90D9; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    .copy-btn:hover { background: #357ABD; }
+    .copy-btn:active { background: #2A5F9E; }
+    .copy-feedback { margin-left: 10px; color: #4CAF50; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-area">
+      <p class="company-name"><!-- COMPANY_NAME --></p>
+      <h1><!-- COURSE_NAME --></h1>
+      <!-- SUBTITLE: 확인된 메타 정보만 | 로 구분하여 표시. 미확인 항목은 생략. -->
+      <p class="subtitle"><!-- 예: 2026.03.09~03.10 | 송유이 강사 | 26명 응답 --></p>
+    </div>
+
+    <!-- ===== 메인 탭 ===== -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('review')">블록 검토</button>
+      <button class="tab" onclick="switchTab('mail')">메일 미리보기</button>
+    </div>
+
+    <!-- ===== 블록 검토 탭 ===== -->
+    <div id="tab-review" class="tab-content active">
+
+      <div class="review-description">
+        메일에 들어갈 내용을 <strong>객관식 / 주관식 / 운영진 의견</strong> 영역별로 나눠서 보여드립니다.<br>
+        각 영역의 근거 자료(제외 항목, 작성 근거 등)도 함께 확인할 수 있습니다.<br>
+        오른쪽 <strong>메일 미리보기</strong> 탭에서 실제 메일 형태로도 확인해보세요.
+      </div>
+      <div class="guide-banner">
+        <strong>수정이 필요하면 Claude Code 대화창에서 말씀해주세요.</strong>
+        <div class="example">예: "운영진 의견 톤 좀 더 부드럽게 해줘", "주관식 이 유형 빼줘", "객관식 표에 긍정 비율 빼줘"</div>
+      </div>
+
+      <!-- sub-tab: 동적 생성 — 해당 블록이 없으면 sub-tab 자체를 생성하지 않음.
+           sub-tab이 1개만 남으면 sub-tab 바 없이 내용만 바로 표시. -->
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="switchSubTab('review', 'obj')">객관식</button>
+        <button class="sub-tab" onclick="switchSubTab('review', 'subj')">주관식</button>
+        <button class="sub-tab" onclick="switchSubTab('review', 'opinion')">운영진 의견</button>
+      </div>
+
+      <!-- 객관식 sub-tab -->
+      <div id="review-obj" class="sub-tab-content active">
+        <!-- REVIEW_OBJECTIVE_CONTENT -->
+      </div>
+
+      <!-- 주관식 sub-tab -->
+      <div id="review-subj" class="sub-tab-content">
+        <!-- context-notice: 주관식 처리 방식 안내 (동적 생성 시 실제 내용으로 교체) -->
+        <div class="context-notice">
+          주관식 문항의 성격에 따라 유형별 분류(긍정/개선/추가 교육 니즈) 또는 문항별 답변 패턴으로 정리했습니다.<br>
+          요약문의 근거 원문은 아래에서 확인할 수 있습니다.
+        </div>
+        <!-- REVIEW_SUBJECTIVE_CONTENT -->
+
+        <!-- 유형별 구조 예시 -->
+        <!--
+        <div class="category-group">
+          <div class="category-title">긍정 의견</div>
+          <div class="subcategory">
+            <span class="subcategory-name">실습 위주의 커리큘럼:</span>
+            <span class="subcategory-summary">직접 AI 툴을 사용해보는 실습 위주의 강의 구성이 매우 유익했음.</span>
+            <details>
+              <summary>근거 원문 보기</summary>
+              <ul class="evidence-area">
+                <li>"직접 AI 툴을 사용해볼 수 있어서 좋았다" <span class="source">('all responses' > 25행)</span></li>
+                <li>"이론이 아닌 실습 중심이라 집중이 잘 됐다" <span class="source">('all responses' > 31행)</span></li>
+              </ul>
+            </details>
+          </div>
+        </div>
+        -->
+      </div>
+
+      <!-- 운영진 의견 sub-tab -->
+      <div id="review-opinion" class="sub-tab-content">
+        <!-- context-notice: 운영진 의견 맥락 안내 (강의관리 시트 유무에 따라 동적 변경) -->
+        <div class="context-notice">
+          운영진 의견 초안입니다. 아래 <strong>작성 근거 표</strong>에서 어떤 자료를 바탕으로 작성했는지 확인할 수 있습니다.<br>
+          <!-- 강의관리 시트 없을 때: "강의관리 시트가 없어 현장 맥락이 반영되지 않았습니다. 필요 시 수정해주세요." -->
+        </div>
+        <!-- REVIEW_OPINION_CONTENT -->
+      </div>
+    </div>
+
+    <!-- ===== 메일 미리보기 탭 ===== -->
+    <div id="tab-mail" class="tab-content">
+
+      <!-- sub-tab: 리포트 범위에 따라 동적 생성.
+           강사용만이면 기업담당자용 sub-tab 미생성, 그 반대도 동일.
+           sub-tab이 1개만 남으면 sub-tab 바 없이 내용만 바로 표시. -->
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="switchSubTab('mail', 'corp')">기업담당자용</button>
+        <button class="sub-tab" onclick="switchSubTab('mail', 'instructor')">강사용<!-- (강사명) --></button>
+      </div>
+
+      <!-- 기업담당자용 sub-tab -->
+      <div id="mail-corp" class="sub-tab-content active">
+        <div class="guide-banner">
+          <strong>수정이 필요하면 Claude Code 대화창에서 말씀해주세요.</strong> 수정 후 이 페이지가 새로 생성됩니다.<br>
+          수정할 내용이 없으면, 아래 <strong>"메일 내용 복사"</strong> 버튼을 눌러 실제 메일에 붙여넣기 하시면 됩니다.
+          <div class="example">예: "마무리 멘트 바꿔줘", "객관식 표에서 긍정 비율 빼줘"</div>
+        </div>
+        <div class="mail-preview" id="mail-corp-content">
+          <!-- MAIL_CORP_CONTENT -->
+        </div>
+        <button class="copy-btn" onclick="copyMail('mail-corp-content')">메일 내용 복사</button>
+        <span class="copy-feedback" id="feedback-corp"></span>
+      </div>
+
+      <!-- 강사용 sub-tab -->
+      <div id="mail-instructor" class="sub-tab-content">
+        <div class="guide-banner">
+          <strong>수정이 필요하면 Claude Code 대화창에서 말씀해주세요.</strong> 수정 후 이 페이지가 새로 생성됩니다.<br>
+          수정할 내용이 없으면, 아래 <strong>"메일 내용 복사"</strong> 버튼을 눌러 실제 메일에 붙여넣기 하시면 됩니다.
+          <div class="example">예: "주관식 요약 톤 바꿔줘", "운영진 의견에 이 내용 추가해줘"</div>
+        </div>
+        <div class="mail-preview" id="mail-instructor-content">
+          <!-- MAIL_INSTRUCTOR_CONTENT -->
+        </div>
+        <button class="copy-btn" onclick="copyMail('mail-instructor-content')">메일 내용 복사</button>
+        <span class="copy-feedback" id="feedback-instructor"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* 메인 탭 전환 */
+    function switchTab(tabName) {
+      document.querySelectorAll('.tabs > .tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    /* sub-tab 전환 — 같은 메인 탭 안에서만 동작 */
+    function switchSubTab(parentTab, subTabName) {
+      const parent = document.getElementById('tab-' + parentTab);
+      parent.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+      parent.querySelectorAll('.sub-tab-content').forEach(t => t.classList.remove('active'));
+      document.getElementById(parentTab + '-' + subTabName).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    /* 메일 복사 */
+    function copyMail(elementId) {
+      const el = document.getElementById(elementId);
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.execCommand('copy');
+      selection.removeAllRanges();
+
+      const parts = elementId.split('-');
+      const feedbackId = 'feedback-' + parts[parts.length - 1];
+      const feedback = document.getElementById(feedbackId);
+      if (feedback) {
+        feedback.textContent = '복사 완료!';
+        setTimeout(() => { feedback.textContent = ''; }, 2000);
+      }
+    }
+  </script>
+</body>
+</html>

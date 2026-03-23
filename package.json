@@ -1,0 +1,14 @@
+{
+  "name": "satisfaction-report",
+  "version": "1.0.0",
+  "description": "만족도조사 설문 결과 리포팅 플러그인 — 기업담당자용/강사용 메일 자동 생성",
+  "private": true,
+  "scripts": {
+    "check-env": "node scripts/check-env.js",
+    "calculate": "node scripts/calculate.js",
+    "verify": "node scripts/verify.js"
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  }
+}
