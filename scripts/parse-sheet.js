@@ -204,10 +204,19 @@ function parseSheet(worksheet, sheetName, instructorsFromTabs) {
 
   // 응답 데이터 행 추출 (헤더 다음 행부터, 비데이터 행 제외)
   // 원래 rawData 인덱스를 보존하여 엑셀 행 번호를 정확히 추적
+  // AVERAGE/평균 행을 만나면 그 이후는 모두 통계 영역으로 간주하여 스킵
   const responseRowsWithIndex = [];
+  let hitSummaryLabel = false;
   for (let i = headerRowIndex + 1; i < rawData.length; i++) {
     const row = rawData[i];
     if (!row || !row.some(cell => cell !== null && cell !== undefined && cell !== '')) continue;
+
+    // AVERAGE/평균 등 통계 라벨 행을 만나면 이후 전부 스킵
+    if (!hitSummaryLabel && hasSummaryLabel(row)) {
+      hitSummaryLabel = true;
+    }
+    if (hitSummaryLabel) continue;
+
     if (isScaleGuideRow(row)) continue;
     if (isSummaryRow(row)) continue;
     responseRowsWithIndex.push({
@@ -569,13 +578,32 @@ function isScaleGuideRow(row) {
  * @param {Array} row - 행 데이터
  * @returns {boolean}
  */
+/**
+ * 행에 통계 라벨(AVERAGE, 평균, 합계 등)이 포함되어 있는지 확인한다.
+ * 이 행 이후는 모두 통계/요약 영역으로 간주한다.
+ * @param {Array} row - 행 데이터
+ * @returns {boolean}
+ */
+function hasSummaryLabel(row) {
+  return row.some(cell =>
+    typeof cell === 'string' && /^(average|평균|합계|sum|count|총계)/i.test(cell.trim())
+  );
+}
+
 function isSummaryRow(row) {
-  // 첫 번째 비어있지 않은 셀의 위치 확인
+  const nonEmptyCells = row.filter(cell => cell !== null && cell !== undefined && cell !== '');
+  if (nonEmptyCells.length === 0) return false;
+
+  // 첫 번째 비어있지 않은 셀 확인
   const firstNonEmpty = row.findIndex(cell => cell !== null && cell !== undefined && cell !== '');
-  if (firstNonEmpty === -1) return false;
+  const firstCell = row[firstNonEmpty];
+
+  // 첫 번째 셀이 "AVERAGE", "평균" 등 통계 라벨이면 → 요약 행
+  if (typeof firstCell === 'string' && /^(average|평균|합계|sum|count|총계)/i.test(firstCell.trim())) {
+    return true;
+  }
 
   // 첫 번째 셀이 정수(응답자 번호)면 응답 데이터일 가능성 높음
-  const firstCell = row[firstNonEmpty];
   if (Number.isInteger(Number(firstCell)) && Number(firstCell) > 0 && Number(firstCell) < 1000) {
     return false;
   }
