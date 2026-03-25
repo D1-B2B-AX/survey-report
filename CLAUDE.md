@@ -6,6 +6,16 @@
 
 "만족도 리포팅해줘" 또는 "/report" 라고 입력하면 리포팅이 시작됩니다.
 
+## ⚠️ 문서 동기화 규칙
+
+**SKILL.md 또는 CLAUDE.md를 수정하면, 아래 연관 문서도 같은 턴에서 함께 업데이트한다.** 사용자가 따로 요청하지 않아도 자동으로 수행한다.
+
+1. `~/.claude/만족도_리포팅_아키텍처_하네스_설계_0317.md`
+2. `~/.claude/만족도_리포팅_플러그인_설계로그.md`
+3. `~/.claude/skills/report/report_OM사용가이드.md`
+4. `~/.claude/projects/C--Users-GA--claude/memory/project-satisfaction-survey.md`
+5. `~/.claude/projects/C--Users-GA--claude/memory/MEMORY.md`
+
 ## 핵심 규칙
 
 - **매 실행마다 반드시 `scripts/check-env.js`를 실행합니다.** 연속 실행이더라도 건너뛰지 않습니다. 업데이트 확인은 이 스크립트에서만 수행됩니다.

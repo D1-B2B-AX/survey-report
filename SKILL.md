@@ -22,6 +22,9 @@ cd ~/.claude/skills/report && node scripts/check-env.js
 
 check-env.js 결과를 확인한 뒤, 아래 항목별로 대응합니다.
 
+**환경 확인 후 안내**: check-env.js가 정상 완료되면, 아래 안내를 대화창에 출력합니다:
+> "💡 리포팅 중 명령 실행 승인 팝업이 뜰 수 있습니다. 번거로우시면 `/report_OM사용가이드`의 '권한 설정' 섹션을 참고해주세요."
+
 ```
 1. Node.js 설치 여부 확인 (node -v)
    → 없으면: winget install OpenJS.NodeJS.LTS 자동 설치 시도
