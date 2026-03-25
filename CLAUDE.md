@@ -26,7 +26,8 @@
 │   ├── check-env.js       ← 환경 확인 + 자동 업데이트 체크 (첫 실행 시)
 │   ├── parse-sheet.js     ← 공용 시트 파싱 모듈
 │   ├── calculate.js       ← 객관식 점수 계산
-│   └── verify.js          ← Ralph 루프 자동 검증 (7개 항목 × 시트별 루프)
+│   ├── verify.js          ← Ralph 루프 자동 검증 (7개 항목 × 시트별 루프)
+│   └── generate-shell.js  ← HTML 셸 생성 (고정 CSS/JS → head/tail 반환)
 └── templates/
     └── report-shell.html  ← HTML output 템플릿 (CSS/JS 참고용)
 ```
@@ -34,7 +35,7 @@
 ## HTML output
 
 - 블록 검토와 메일 미리보기를 **처음부터 함께** HTML 파일로 생성합니다.
-- `templates/report-shell.html`의 CSS/JS를 참고하여 Write 도구로 직접 HTML을 작성합니다. (고정 변환 스크립트 사용 안 함)
+- **혼재 구조**: `scripts/generate-shell.js`로 고정 부분(CSS/JS)을 head/tail로 받고, LLM은 가변 본문만 Write합니다. CSS/JS를 직접 작성하지 않습니다.
 - **헤더**: 기업명(`company-name`, 16px 강조) + 과정명(큰 제목) + 부제(교육일시 | 강사명 | 응답인원)
 - **블록 검토 탭**: sub-tab(객관식|주관식|운영진 의견)으로 영역 분리. sub-tab 위에 `review-description`(전체 설명) + `guide-banner`(수정 안내) 고정. 주관식/운영진 의견 sub-tab 안에 `context-notice`(맥락 설명, 배경 없이 텍스트 강조)
 - **메일 미리보기 탭**: sub-tab(기업담당자용|강사용)으로 분리. 각 sub-tab에 `guide-banner` + "메일 내용 복사" 버튼
@@ -48,6 +49,11 @@
 ## 스크립트 사용법
 
 **⚠️ 스크립트 실행 시 반드시 `cd ~/.claude/skills/report &&`를 앞에 붙여서 실행합니다.**
+
+**⚠️ Windows 환경 주의사항**:
+- 임시 파일 경로: `/tmp/` 대신 `os.tmpdir()` 또는 다운로드 폴더 사용
+- `node -e` 안에서 백슬래시 이스케이프가 꼬이기 쉬움 → 경로는 슬래시(`/`)로 통일, 정규식 사용 자제
+- calculate.js 결과의 `shortName`을 블록 JSON에 넣을 때 **그대로 사용** (임의 축약 금지 — verify.js 문항명 매칭 실패 원인)
 
 ```bash
 # 환경 확인 (첫 실행 시 자동)
