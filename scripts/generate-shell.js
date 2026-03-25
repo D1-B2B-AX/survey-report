@@ -7,9 +7,11 @@
  * 사용법:
  *   node scripts/generate-shell.js "리포트 제목"
  *
- * 출력: JSON — { head, tail }
+ * 출력: JSON — { head, tail, reviewHeader, mailHeader }
  *   head: <!DOCTYPE html> ~ <div class="container"> 직후까지 (CSS 포함)
  *   tail: </div> ~ </html> (JS 포함)
+ *   reviewHeader: 블록 검토 탭 상단 고정 안내 (review-description + guide-banner)
+ *   mailHeader: 메일 미리보기 탭 상단 고정 안내 (guide-banner)
  */
 
 const title = process.argv[2] || '만족도 리포팅 결과';
@@ -123,4 +125,20 @@ const tail = `  </div>
 </body>
 </html>`;
 
-console.log(JSON.stringify({ head, tail }));
+const reviewHeader = `      <div class="review-description">
+        메일에 들어갈 내용을 <strong>객관식 / 주관식 / 운영진 의견</strong> 영역별로 나눠서 보여드립니다.<br>
+        각 영역의 근거 자료(제외 항목, 작성 근거 등)도 함께 확인할 수 있습니다.<br>
+        오른쪽 <strong>메일 미리보기</strong> 탭에서 실제 메일 형태로도 확인해보세요.
+      </div>
+      <div class="guide-banner">
+        <strong>수정이 필요하면 Claude Code 대화창에서 말씀해주세요.</strong>
+        <div class="example">예: "운영진 의견 톤 좀 더 부드럽게 해줘", "주관식 이 유형 빼줘", "객관식 표에서 긍정 비율 빼줘"</div>
+      </div>`;
+
+const mailHeader = `      <div class="guide-banner">
+        <strong>수정이 필요하면 Claude Code 대화창에서 말씀해주세요.</strong> 수정 후 이 페이지가 새로 생성됩니다.<br>
+        수정할 내용이 없으면, 아래 <strong>"메일 내용 복사"</strong> 버튼을 눌러 실제 메일에 붙여넣기 하시면 됩니다.
+        <div class="example">예: "마무리 멘트 바꿔줘", "객관식 표에서 긍정 비율 빼줘"</div>
+      </div>`;
+
+console.log(JSON.stringify({ head, tail, reviewHeader, mailHeader }));

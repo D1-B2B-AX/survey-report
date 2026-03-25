@@ -488,9 +488,15 @@ Ralph 루프를 통과한 블록 데이터를 HTML 파일로 생성합니다. **
    ```bash
    cd ~/.claude/skills/report && node scripts/generate-shell.js "기업명 과정명 만족도 리포트"
    ```
-   → JSON `{ head, tail }` 반환. head = `<!DOCTYPE html>` ~ `<div class="container">`, tail = `</div>` ~ `</html>`
+   → JSON `{ head, tail, reviewHeader, mailHeader }` 반환.
+   - head: `<!DOCTYPE html>` ~ `<div class="container">` (CSS 포함)
+   - tail: `</div>` ~ `</html>` (JS 포함)
+   - reviewHeader: 블록 검토 탭 상단 고정 안내 (review-description + guide-banner)
+   - mailHeader: 메일 미리보기 탭 상단 고정 안내 (guide-banner)
 2. Write 도구로 HTML 파일을 작성할 때: **head + 가변 본문 + tail** 순서로 조합한다.
-   - head/tail은 generate-shell.js 출력 그대로 사용 (CSS/JS를 직접 쓰지 않음)
+   - head/tail/reviewHeader/mailHeader는 generate-shell.js 출력 **그대로** 사용 (수정/재작성 금지)
+   - reviewHeader는 블록 검토 탭 안, sub-tab 위에 배치
+   - mailHeader는 메일 미리보기 탭 안, sub-tab 위에 배치
    - 가변 본문만 LLM이 작성: 헤더 영역, 탭 구조, 블록 검토 내용, 메일 미리보기 내용
 
 **HTML 헤더 영역**:
