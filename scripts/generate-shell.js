@@ -73,8 +73,11 @@ const head = `<!DOCTYPE html>
     .mail-preview { padding: 20px; border: 1px solid #ddd; border-radius: 4px; background: #fff; font-size: 13px; line-height: 1.8; }
     .mail-preview table { margin: 10px 0; }
     .mail-opinion { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e0e0e0; }
-    .copy-btn { margin-top: 10px; padding: 10px 24px; background: #4A90D9; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
-    .copy-btn:hover { background: #357ABD; }
+    .copy-btn { margin-top: 10px; padding: 10px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    .copy-btn-primary { background: #4A90D9; color: #fff; }
+    .copy-btn-primary:hover { background: #357ABD; }
+    .copy-btn-secondary { background: #e8e8e8; color: #333; }
+    .copy-btn-secondary:hover { background: #d0d0d0; }
     .copy-feedback { margin-left: 10px; color: #4CAF50; font-size: 13px; }
     .source-table { margin: 10px 0; font-size: 12px; }
     .source-table th { background: #f0f4f8; font-size: 12px; }
@@ -137,7 +140,7 @@ const reviewHeader = `      <div class="review-description">
 
 const mailHeader = `      <div class="guide-banner">
         <strong>수정이 필요하면 Claude Code 대화창에서 말씀해주세요.</strong> 수정 후 이 페이지가 새로 생성됩니다.<br>
-        수정할 내용이 없으면, 아래 <strong>"메일 내용 복사"</strong> 버튼을 눌러 실제 메일에 붙여넣기 하시면 됩니다.
+        수정할 내용이 없으면, 아래 복사 버튼을 사용해주세요. <strong>"본문 복사"</strong> 또는 <strong>"전체 복사 (제목+본문)"</strong>
         <div class="example">예: "마무리 멘트 바꿔줘", "객관식 표에서 긍정 비율 빼줘"</div>
       </div>`;
 
