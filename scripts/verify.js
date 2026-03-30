@@ -170,14 +170,15 @@ function collectSubjectiveQuotes(block2) {
 
 /**
  * block3/block4에서 운영진 의견 근거 인용문을 수집한다.
+ * source 필드를 함께 보존하여 검증 시 검색 대상을 분기한다.
  */
 function collectManagementQuotes(blocks) {
   const quotes = [];
   for (const block of blocks) {
     if (block.sources) {
       for (const s of block.sources) {
-        if (s.original && s.source !== 'raw data') {
-          quotes.push({ text: s.original });
+        if (s.original) {
+          quotes.push({ text: s.original, source: s.source || '강의관리시트' });
         }
       }
     }
@@ -263,7 +264,7 @@ function main() {
       checkScaleNotation(rawSheet, outputData),
       checkRounding(outputData),
       checkSubjectiveQuotesAll(allRawSubjectiveTexts, outputData),
-      checkManagementQuotesRaw(managementTexts, outputData),
+      checkManagementQuotesRaw(managementTexts, allRawSubjectiveTexts, outputData),
       checkScoreCitationsAll(analysis.sheets, outputData),
     ];
 
@@ -561,16 +562,19 @@ function checkManagementQuotes(managementAnalysis, outputData) {
       }
     }
   }
-  return checkManagementQuotesRaw(mgmtTexts, outputData);
+  return checkManagementQuotesRaw(mgmtTexts, [], outputData);
 }
 
 /**
- * 운영진 의견 근거 표에 인용된 원문이 강의관리 시트에 실제로 존재하는지 확인한다.
- * 강의관리 시트의 모든 탭을 raw 텍스트로 검색한다.
- * @param {string[]} managementTexts - readAllCellTexts로 수집한 전체 셀 텍스트 배열
+ * 운영진 의견 근거 표에 인용된 원문이 실제로 존재하는지 확인한다.
+ * source 필드에 따라 검색 대상을 분기한다:
+ *   - "강의관리시트" (기본) → 강의관리 시트 전체 셀 텍스트에서 검색
+ *   - "raw data" → raw data 주관식 원문에서 검색
+ * @param {string[]} managementTexts - readAllCellTexts로 수집한 강의관리시트 전체 셀 텍스트 배열
+ * @param {Array<{text: string, location: string}>} rawSubjectiveTexts - raw data 주관식 원문 배열
  * @param {object} outputData - 정규화된 블록 데이터
  */
-function checkManagementQuotesRaw(managementTexts, outputData) {
+function checkManagementQuotesRaw(managementTexts, rawSubjectiveTexts, outputData) {
   const quotes = outputData.managementQuotes || [];
 
   if (quotes.length === 0) {
@@ -583,12 +587,13 @@ function checkManagementQuotesRaw(managementTexts, outputData) {
     };
   }
 
-  if (managementTexts.length === 0) {
+  // 강의관리시트도 없고 raw data 주관식도 없으면 검증 불가
+  if (managementTexts.length === 0 && rawSubjectiveTexts.length === 0) {
     return {
       id: 6,
       name: '운영진 의견 근거 원문 존재',
       passed: true,
-      detail: '강의관리 시트 미제공 — 강의관리 시트 기반 근거 없음 (raw data 근거는 검증 5에서 확인)',
+      detail: '강의관리 시트 미제공 + raw data 주관식 없음 — 근거 검증 대상 없음',
       missing: [],
     };
   }
@@ -596,15 +601,44 @@ function checkManagementQuotesRaw(managementTexts, outputData) {
   const missing = [];
   for (const quote of quotes) {
     const quoteText = normalizeQuotes(String(quote.text));
-    // 모든 셀 텍스트에서 부분 매칭 (따옴표/공백 정규화)
-    const found = managementTexts.some(mt => {
-      const normMt = normalizeQuotes(mt);
-      return normMt.includes(quoteText) || quoteText.includes(normMt);
-    });
+    const source = (quote.source || '강의관리시트').toLowerCase();
+    let found = false;
+
+    if (source.includes('raw data') || source.includes('raw_data') || source.includes('주관식')) {
+      // raw data 주관식 원문에서 검색
+      found = rawSubjectiveTexts.some(r => {
+        const normR = normalizeQuotes(String(r.text));
+        return normR.includes(quoteText) || quoteText.includes(normR);
+      });
+      // raw data에서 못 찾으면 강의관리시트에서도 시도 (fallback)
+      if (!found && managementTexts.length > 0) {
+        found = managementTexts.some(mt => {
+          const normMt = normalizeQuotes(mt);
+          return normMt.includes(quoteText) || quoteText.includes(normMt);
+        });
+      }
+    } else {
+      // 강의관리시트에서 검색
+      if (managementTexts.length > 0) {
+        found = managementTexts.some(mt => {
+          const normMt = normalizeQuotes(mt);
+          return normMt.includes(quoteText) || quoteText.includes(normMt);
+        });
+      }
+      // 강의관리시트에서 못 찾으면 raw data에서도 시도 (fallback)
+      if (!found) {
+        found = rawSubjectiveTexts.some(r => {
+          const normR = normalizeQuotes(String(r.text));
+          return normR.includes(quoteText) || quoteText.includes(normR);
+        });
+      }
+    }
+
     if (!found) {
+      const searchTarget = source.includes('raw data') ? 'raw data' : '강의관리 시트';
       missing.push({
         quotedText: quoteText,
-        detail: '강의관리 시트에서 원문을 찾을 수 없음',
+        detail: `${searchTarget} 및 fallback 검색에서도 원문을 찾을 수 없음`,
       });
     }
   }
