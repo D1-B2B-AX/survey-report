@@ -51,13 +51,9 @@ git clone https://github.com/D1-B2B-AX/survey-report.git ~/.claude/skills/report
 
 ### STEP 1. 실행 + 파일 전달
 
-Claude Code에서 아래 중 하나를 입력합니다:
-- `/report`
-- "만족도 리포팅해줘"
-- "만족도 결과보고 작성해줘"
-- "설문 결과 정리해줘"
+Claude Code 대화창에서 `/report`를 입력합니다.
 
-그러면 이런 안내가 나옵니다:
+실행하면 먼저 **환경 설정이 자동으로 확인**됩니다 (패키지 설치, 플러그인 업데이트 등). 완료 후 아래 안내가 나옵니다:
 
 ```
 만족도 결과보고를 작성할게요. 아래 파일을 전달해주세요.
