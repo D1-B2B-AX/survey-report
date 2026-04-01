@@ -1,20 +1,22 @@
 /**
- * generate-shell.js — HTML 셸 생성 스크립트
+ * generate-shell.js — HTML 셸 생성 + 조립 스크립트
  *
- * 고정 부분(CSS/JS/안내문구)을 head/tail로 분리하여 반환한다.
- * LLM은 head와 tail 사이에 가변 본문만 Write하면 된다.
- *
- * 사용법:
+ * [모드 1: 셸 반환] (기존)
  *   node scripts/generate-shell.js "리포트 제목"
+ *   → JSON { head, tail, reviewHeader, mailHeader } 출력
  *
- * 출력: JSON — { head, tail, reviewHeader, mailHeader }
- *   head: <!DOCTYPE html> ~ <div class="container"> 직후까지 (CSS 포함)
- *   tail: </div> ~ </html> (JS 포함)
- *   reviewHeader: 블록 검토 탭 상단 고정 안내 (review-description + guide-banner)
- *   mailHeader: 메일 미리보기 탭 상단 고정 안내 (guide-banner)
+ * [모드 2: HTML 조립] (신규)
+ *   node scripts/generate-shell.js "리포트 제목" "본문파일경로" "출력파일경로"
+ *   → 본문 파일을 읽어 head + 본문 + tail을 합친 최종 HTML을 출력 파일로 저장
+ *   → LLM은 CSS/JS를 작성하지 않고, 본문만 Write한 뒤 이 명령으로 조립
  */
 
+const fs = require('fs');
+const path = require('path');
+
 const title = process.argv[2] || '만족도 리포팅 결과';
+const bodyFilePath = process.argv[3] || null;
+const outputFilePath = process.argv[4] || null;
 
 const head = `<!DOCTYPE html>
 <html lang="ko">
@@ -88,6 +90,7 @@ const head = `<!DOCTYPE html>
     .pattern-count { color: #888; font-size: 12px; }
     .note { font-size: 12px; color: #888; margin: 4px 0; font-style: italic; }
     .bipolar-dist { font-size: 12px; color: #666; margin-top: 4px; }
+    .mail-subject { font-size: 14px; font-weight: 600; color: #333; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid #ddd; }
   </style>
 </head>
 <body>
@@ -144,4 +147,24 @@ const mailHeader = `      <div class="guide-banner">
         <div class="example">예: "마무리 멘트 바꿔줘", "객관식 표에서 긍정 비율 빼줘"</div>
       </div>`;
 
-console.log(JSON.stringify({ head, tail, reviewHeader, mailHeader }));
+// 모드 분기
+if (bodyFilePath && outputFilePath) {
+  // 모드 2: HTML 조립
+  try {
+    const body = fs.readFileSync(bodyFilePath, 'utf-8');
+    const html = head + '\n' + body + '\n' + tail;
+    fs.writeFileSync(outputFilePath, html, 'utf-8');
+    console.log(JSON.stringify({
+      success: true,
+      outputPath: outputFilePath,
+      reviewHeader,
+      mailHeader,
+    }));
+  } catch (err) {
+    console.error(JSON.stringify({ success: false, error: err.message }));
+    process.exit(1);
+  }
+} else {
+  // 모드 1: 셸 반환 (기존)
+  console.log(JSON.stringify({ head, tail, reviewHeader, mailHeader }));
+}
