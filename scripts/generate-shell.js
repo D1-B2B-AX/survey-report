@@ -140,7 +140,7 @@ const reviewHeader = `      <div class="review-description">
 
 const mailHeader = `      <div class="guide-banner">
         <strong>수정이 필요하면 Claude Code 대화창에서 말씀해주세요.</strong> 수정 후 이 페이지가 새로 생성됩니다.<br>
-        수정할 내용이 없으면, 아래 복사 버튼을 사용해주세요. <strong>"본문 복사"</strong> 또는 <strong>"전체 복사 (제목+본문)"</strong>
+        수정할 내용이 없으면, 아래 <strong>복사 버튼</strong>을 사용하거나 대화창에서 <strong>"임시보관함에 넣어줘"</strong>라고 하면 Gmail 초안으로도 생성됩니다.
         <div class="example">예: "마무리 멘트 바꿔줘", "객관식 표에서 긍정 비율 빼줘"</div>
       </div>`;
 
