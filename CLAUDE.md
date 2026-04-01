@@ -76,5 +76,5 @@ cd ~/.claude/skills/report && node scripts/check-env.js
 cd ~/.claude/skills/report && node scripts/calculate.js "파일경로" [시트명]
 
 # Ralph 루프 검증
-cd ~/.claude/skills/report && node scripts/verify.js "raw-data-경로" "블록결과.json" [강의관리시트-경로]
+cd ~/.claude/skills/report && node scripts/verify.js "raw-data-경로" "블록결과_{YYYYMMDD}_{HHMM}.json" [강의관리시트-경로]
 ```
