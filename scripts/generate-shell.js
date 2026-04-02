@@ -17,6 +17,67 @@ const path = require('path');
 const title = process.argv[2] || '만족도 리포팅 결과';
 const bodyFilePath = process.argv[3] || null;
 const outputFilePath = process.argv[4] || null;
+const metaFilePath = process.argv[5] || null;
+
+// --- HTML entity 이스케이프 ---
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// --- meta.json → 헤더 HTML 생성 ---
+function buildHeader(meta) {
+  const parts = [];
+  if (meta.date) parts.push(meta.date);
+  if (meta.instructor) {
+    const name = meta.instructor;
+    parts.push(name.includes('강사') ? name : name + ' 강사');
+  }
+  if (meta.respondents) parts.push(meta.respondents + '명 응답');
+  const subtitle = parts.join(' | ');
+
+  let html = '    <div class="header-area">\n';
+  if (meta.company) {
+    html += '      <div class="company-name">' + escapeHtml(meta.company) + '</div>\n';
+  }
+  if (meta.course) {
+    html += '      <h1>' + escapeHtml(meta.course) + '</h1>\n';
+  }
+  if (subtitle) {
+    html += '      <div class="subtitle">' + escapeHtml(subtitle) + '</div>\n';
+  }
+  html += '    </div>\n';
+  return html;
+}
+
+// --- meta.json → hidden 필드 HTML 생성 ---
+function buildHiddenFields(meta) {
+  const metaForHidden = {
+    company: meta.company || '',
+    course: meta.course || '',
+    date: meta.date || '',
+    instructor: meta.instructor || '',
+    respondents: meta.respondents || '',
+    omName: meta.omName || '',
+  };
+  const phase5Text = Array.isArray(meta.phase5Log)
+    ? meta.phase5Log.join(' / ')
+    : '';
+
+  let html = '\n    <!-- GAS 연동용 hidden 데이터 -->\n';
+  html += '    <div style="display:none;">\n';
+  html += "      <input type=\"hidden\" id=\"hidden-meta\" value='" + escapeHtml(JSON.stringify(metaForHidden)) + "' />\n";
+  html += '      <input type="hidden" id="hidden-start-time" value="' + escapeHtml(meta.pluginStartTime || '') + '" />\n';
+  html += '      <input type="hidden" id="hidden-html-created-time" value="' + escapeHtml(meta.htmlCreatedTime || '') + '" />\n';
+  html += '      <input type="hidden" id="hidden-phase5" value="' + escapeHtml(phase5Text) + '" />\n';
+  html += '    </div>\n';
+  return html;
+}
 
 const head = `<!DOCTYPE html>
 <html lang="ko">
@@ -152,7 +213,22 @@ if (bodyFilePath && outputFilePath) {
   // 모드 2: HTML 조립
   try {
     const body = fs.readFileSync(bodyFilePath, 'utf-8');
-    const html = head + '\n' + body + '\n' + tail;
+
+    let headerHtml = '';
+    let hiddenHtml = '';
+
+    if (metaFilePath && fs.existsSync(metaFilePath)) {
+      const meta = JSON.parse(fs.readFileSync(metaFilePath, 'utf-8'));
+
+      // htmlCreatedTime을 현재 시점으로 갱신하고 meta.json에 저장
+      meta.htmlCreatedTime = new Date().toISOString();
+      fs.writeFileSync(metaFilePath, JSON.stringify(meta, null, 2), 'utf-8');
+
+      headerHtml = buildHeader(meta);
+      hiddenHtml = buildHiddenFields(meta);
+    }
+
+    const html = head + '\n' + headerHtml + body + '\n' + hiddenHtml + tail;
     fs.writeFileSync(outputFilePath, html, 'utf-8');
     console.log(JSON.stringify({
       success: true,
