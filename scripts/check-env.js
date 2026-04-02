@@ -30,6 +30,14 @@ function main() {
 
   checks.allReady = checks.nodeJs.ok && checks.packages.ok;
 
+  // 현재 시각 — LLM이 시각을 추측하지 않고 이 값을 사용
+  const now = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kst = new Date(now.getTime() + kstOffset);
+  checks.currentTime = now.toISOString();
+  checks.currentTimeKST = kst.toISOString().slice(0, 16).replace('T', ' ');
+  checks.fileTimestamp = kst.toISOString().slice(0, 10).replace(/-/g, '') + '_' + kst.toISOString().slice(11, 13) + kst.toISOString().slice(14, 16);
+
   console.log(JSON.stringify(checks, null, 2));
 
   if (!checks.allReady) {
