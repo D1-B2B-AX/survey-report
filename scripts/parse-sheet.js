@@ -779,6 +779,10 @@ function readOverviewTab(workbook) {
     }
   }
 
+  // courseInfo 값이 전부 비어있으면 found: false (탭은 있지만 미작성된 경우)
+  const hasAnyCourseInfo = Object.values(courseInfo).some(v => v !== null && v !== '');
+  if (!hasAnyCourseInfo) return { found: false, tab: tabName, courseInfo: {}, people: {} };
+
   return { found: true, tab: tabName, courseInfo, people };
 }
 
