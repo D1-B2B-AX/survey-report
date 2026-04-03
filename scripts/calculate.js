@@ -81,6 +81,7 @@ function main() {
  */
 function calculateSheet(sheet) {
   const scale5Results = [];
+  const scale10Results = [];
   const bipolarResults = [];
   const selectionResults = [];
   const infoResults = [];
@@ -91,7 +92,7 @@ function calculateSheet(sheet) {
         scale5Results.push(calculateScale5(q, sheet.name));
         break;
       case 'scale_10':
-        scale5Results.push(calculateScale5(q, sheet.name)); // 10점도 같은 로직
+        scale10Results.push(calculateScale5(q, sheet.name)); // 같은 계산 로직, 배열만 분리
         break;
       case 'bipolar':
         bipolarResults.push(calculateBipolar(q, sheet.name));
@@ -113,6 +114,7 @@ function calculateSheet(sheet) {
     instructor: sheet.instructor,
     respondentCount: sheet.respondentCount,
     scale5: scale5Results,
+    scale10: scale10Results,
     bipolar: bipolarResults,
     selection: selectionResults,
     info: infoResults,
