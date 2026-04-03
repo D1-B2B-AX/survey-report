@@ -154,6 +154,16 @@ const head = `<!DOCTYPE html>
     .note { font-size: 12px; color: #888; margin: 4px 0; font-style: italic; }
     .bipolar-dist { font-size: 12px; color: #666; margin-top: 4px; }
     .mail-subject { font-size: 14px; font-weight: 600; color: #333; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid #ddd; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.35); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-box { background: #fff; border-radius: 10px; padding: 28px 32px; width: 340px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+    .modal-title { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 16px; }
+    .modal-input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; outline: none; }
+    .modal-input:focus { border-color: #4A90D9; }
+    .modal-btns { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+    .modal-confirm { padding: 8px 20px; background: #4A90D9; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+    .modal-confirm:hover { background: #357ABD; }
+    .modal-cancel { padding: 8px 16px; background: #f0f0f0; color: #666; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+    .modal-cancel:hover { background: #e0e0e0; }
   </style>
 </head>
 <body>
@@ -161,10 +171,24 @@ const head = `<!DOCTYPE html>
 
 const tail = `  </div>
 
+  <div id="nameModal" class="modal-overlay">
+    <div class="modal-box">
+      <div id="modalTitle" class="modal-title">발신자로 기입될 이름을 입력해주세요</div>
+      <input type="text" id="nameInput" class="modal-input" placeholder="예: 홍길동">
+      <div class="modal-btns">
+        <button class="modal-cancel" onclick="cancelName()">건너뛰기</button>
+        <button class="modal-confirm" onclick="confirmName()">확인</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwYga1AtkZIQIzo5Gm_h3lMblxXcnpSkDGztCB3P9fjBpLP1Y0BA1CMoDoCdOd76ag/exec";
-    let _gasSent = false;
+    var GAS_URL = "https://script.google.com/macros/s/AKfycbwYga1AtkZIQIzo5Gm_h3lMblxXcnpSkDGztCB3P9fjBpLP1Y0BA1CMoDoCdOd76ag/exec";
+    var _gasSent = false;
     var _copiedMails = [];
+    var _nameConfirmed = false;
+    var _cancelCount = 0;
+    var _pendingCopyId = null;
 
     function sendDataToSheet() {
       if (_gasSent) return;
@@ -176,8 +200,7 @@ const tail = `  </div>
       var startTime = (document.getElementById("hidden-start-time") || {}).value || "";
       var htmlCreatedTime = (document.getElementById("hidden-html-created-time") || {}).value || "";
       var phase5Log = (document.getElementById("hidden-phase5") || {}).value || "";
-      var now = new Date(Date.now() + 9 * 60 * 60 * 1000);
-      var copyClickTime = now.toISOString().slice(0, 16).replace('T', ' ');
+      var copyClickTime = new Date().toISOString();
 
       fetch(GAS_URL, {
         method: "POST",
@@ -201,38 +224,109 @@ const tail = `  </div>
     }
 
     function switchTab(tabName) {
-      document.querySelectorAll('.tabs > .tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tabs > .tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
       document.getElementById('tab-' + tabName).classList.add('active');
       event.target.classList.add('active');
     }
     function switchSubTab(parentTab, subTabName) {
-      const parent = document.getElementById('tab-' + parentTab);
-      parent.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
-      parent.querySelectorAll('.sub-tab-content').forEach(t => t.classList.remove('active'));
+      var parent = document.getElementById('tab-' + parentTab);
+      parent.querySelectorAll('.sub-tab').forEach(function(t) { t.classList.remove('active'); });
+      parent.querySelectorAll('.sub-tab-content').forEach(function(t) { t.classList.remove('active'); });
       document.getElementById(parentTab + '-' + subTabName).classList.add('active');
       event.target.classList.add('active');
     }
+
+    function showNameModal(elementId) {
+      _pendingCopyId = elementId;
+      var modal = document.getElementById('nameModal');
+      var input = document.getElementById('nameInput');
+      var title = document.getElementById('modalTitle');
+      _cancelCount = 0;
+
+      if (_nameConfirmed) {
+        var metaEl = document.getElementById('hidden-meta');
+        var metaData = metaEl ? JSON.parse(metaEl.value) : {};
+        title.textContent = '발신자: ' + (metaData.omName || '');
+        input.value = metaData.omName || '';
+        input.placeholder = '';
+      } else {
+        title.textContent = '발신자로 기입될 이름을 입력해주세요';
+        input.value = '';
+        input.placeholder = '예: 홍길동';
+      }
+      modal.style.display = 'flex';
+      input.focus();
+      input.select();
+    }
+
+    function confirmName() {
+      var val = document.getElementById('nameInput').value.trim();
+      if (!val) { handleEmptyName(); return; }
+      applyName(val);
+    }
+
+    function handleEmptyName() {
+      _cancelCount++;
+      if (_cancelCount >= 2) {
+        applyName('미입력');
+      } else {
+        document.getElementById('modalTitle').textContent = '이름 없이 진행하면 "미입력"으로 기록됩니다';
+        document.getElementById('nameInput').focus();
+      }
+    }
+
+    function cancelName() { handleEmptyName(); }
+
+    function applyName(name) {
+      _nameConfirmed = true;
+      _cancelCount = 0;
+      var metaEl = document.getElementById('hidden-meta');
+      if (metaEl) {
+        var metaData = JSON.parse(metaEl.value);
+        metaData.omName = name;
+        metaEl.value = JSON.stringify(metaData);
+      }
+      document.querySelectorAll('.mail-preview, [id^="mail-full-"]').forEach(function(el) {
+        el.innerHTML = el.innerHTML.replace(/OOO/g, name);
+      });
+      document.getElementById('nameModal').style.display = 'none';
+      doCopyMail(_pendingCopyId);
+    }
+
     function copyMail(elementId) {
-      const el = document.getElementById(elementId);
-      const range = document.createRange();
+      if (_nameConfirmed) {
+        doCopyMail(elementId);
+      } else {
+        showNameModal(elementId);
+      }
+    }
+
+    function doCopyMail(elementId) {
+      var el = document.getElementById(elementId);
+      var range = document.createRange();
       range.selectNodeContents(el);
-      const selection = window.getSelection();
+      var selection = window.getSelection();
       selection.removeAllRanges();
       selection.addRange(range);
       document.execCommand('copy');
       selection.removeAllRanges();
-      const parts = elementId.split('-');
-      const lastPart = parts.slice(1).join('-');
-      const feedbackId = 'feedback-' + lastPart;
-      const feedback = document.getElementById(feedbackId);
-      if (feedback) { feedback.textContent = '복사 완료!'; setTimeout(() => { feedback.textContent = ''; }, 2000); }
+      var parts = elementId.split('-');
+      var lastPart = parts.slice(1).join('-');
+      var feedbackId = 'feedback-' + lastPart;
+      var feedback = document.getElementById(feedbackId);
+      if (feedback) { feedback.textContent = '복사 완료!'; setTimeout(function() { feedback.textContent = ''; }, 2000); }
       var mailType = elementId.indexOf('corp') !== -1 ? '기업담당자용' : '강사용';
       if (_copiedMails.indexOf(mailType) === -1) _copiedMails.push(mailType);
       var mcEl = document.getElementById('hidden-mail-copied');
       if (mcEl) mcEl.value = _copiedMails.join(', ');
       sendDataToSheet();
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var ni = document.getElementById('nameInput');
+      if (ni) ni.addEventListener('keydown', function(e) { if (e.key === 'Enter') confirmName(); });
+    });
   </script>
 </body>
 </html>`;
@@ -267,7 +361,7 @@ if (bodyFilePath && outputFilePath) {
 
       // htmlCreatedTime을 현재 시점으로 갱신하고 meta.json에 저장
       const nowKst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-      meta.htmlCreatedTime = nowKst.toISOString().slice(0, 16).replace('T', ' ');
+      meta.htmlCreatedTime = new Date().toISOString();
       fs.writeFileSync(metaFilePath, JSON.stringify(meta, null, 2), 'utf-8');
 
       headerHtml = buildHeader(meta);

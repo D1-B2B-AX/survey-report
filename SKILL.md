@@ -51,7 +51,7 @@ check-env.js 출력 예시:
   "fileTimestamp": "20260402_1630",
   "pluginVersion": "1.0.0"
 ```
-- `currentTime` → meta.json `pluginStartTime`에 저장
+- `currentTime` → meta.json `pluginStartTime`에 저장 (ISO 형식. 3개 타임스탬프 모두 ISO로 전송, GAS에서 KST 변환)
 - `fileTimestamp` → 이후 모든 파일명의 `{YYYYMMDD}_{HHMM}` 부분에 사용
 - `currentTimeKST` → 세션 로그의 시각 표기에 사용
 - `pluginVersion` → meta.json `pluginVersion`에 저장
@@ -214,7 +214,7 @@ OM이 확인 또는 수정하면 이 정보를 이후 모든 블록에서 사용
   "respondents": "25",
   "reportScope": "기업담당자용 + 강사용",
   "omName": "",
-  "pluginStartTime": "2026-04-02T14:30:00.000Z",
+  "pluginStartTime": "2026-04-02T07:30:00.000Z",
   "htmlCreatedTime": "",
   "pluginVersion": "",
   "phase5Log": []
@@ -222,7 +222,7 @@ OM이 확인 또는 수정하면 이 정보를 이후 모든 블록에서 사용
 ```
 - **필드 규칙**:
   - 미확인 항목은 빈 문자열 `""` (null이 아님)
-  - `omName`: 현재는 빈 문자열. 향후 OM 이름 수집 기능 추가 시 여기에 저장. GAS 전송 시 함께 포함됨
+  - `omName`: 빈 문자열로 생성. 복사 버튼 클릭 시 모달에서 OM이 직접 입력 → hidden-meta에 반영 → GAS 전송
   - `pluginStartTime`: Phase 0 check-env.js가 출력한 `currentTime` 값 (ISO 형식, 코드가 찍은 정확한 시각)
   - `htmlCreatedTime`: Phase 4.5에서 HTML 생성 시 채움
   - `pluginVersion`: Phase 0 check-env.js가 출력한 `pluginVersion` 값 (package.json 버전)
@@ -878,7 +878,7 @@ OOO 드림
 OOO 드림
 ```
 
-- **OOO**: OM 이름 자리표시자. OM이 복사 후 자기 이름으로 교체합니다.
+- **OOO**: OM 이름 자리표시자. 복사 버튼 클릭 시 모달에서 이름을 입력하면 메일 본문의 OOO가 자동 교체된 후 복사됩니다. 2회 건너뛰기 시 "미입력"으로 처리.
 
 **조립 규칙**:
 - **객관식 표 형식**: 메일에서 객관식은 표 형태로 출력합니다. OM이 메일에 복사-붙여넣기 하기 편하도록 정리된 표를 제공합니다.
