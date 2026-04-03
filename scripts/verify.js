@@ -104,7 +104,7 @@ function normalizeBlockJson(data, availableSheets) {
 
       results.push({
         sheetName,
-        respondentCount: respondentCountMap[sheetName] || block0.respondentCount || (sheetBlock1 && sheetBlock1.respondentCount) || null,
+        respondentCount: respondentCountMap[sheetName] || (isMultiSheet && sheetBlock1 && sheetBlock1.respondentCount) || block0.respondentCount || null,
         questions,
         subjectiveQuotes,
         managementQuotes,
