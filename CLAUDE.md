@@ -77,6 +77,11 @@ cd ~/.claude/skills/report && node scripts/check-env.js
 # found:true → courseInfo + people JSON 반환 / found:false → 비표준 양식, 수동 탐색 fallback
 cd ~/.claude/skills/report && node scripts/parse-sheet.js "강의관리시트경로" --overview
 
+# 블록 JSON → HTML 본문 자동 변환 (Phase 4.5에서 사용)
+# 블록 JSON 스키마에 맞는 JSON을 읽어 블록 검토 + 메일 미리보기 본문 생성
+# 본문 출력 경로는 임시 폴더에 저장 (블록결과 JSON, meta.json과 같은 위치)
+cd ~/.claude/skills/report && node scripts/build-html.js "블록결과JSON경로" "meta.json경로" "임시폴더/본문출력.html"
+
 # 객관식 계산
 cd ~/.claude/skills/report && node scripts/calculate.js "파일경로" [시트명]
 
