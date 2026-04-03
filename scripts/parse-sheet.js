@@ -236,10 +236,13 @@ function parseSheet(worksheet, sheetName, instructorsFromTabs) {
     if (!hitSummaryLabel && hasSummaryLabel(row)) {
       hitSummaryLabel = true;
     }
+    // 라벨 없는 평균/통계 행(소수점 값 다수) 감지 시에도 이후 전부 스킵
+    if (!hitSummaryLabel && isSummaryRow(row)) {
+      hitSummaryLabel = true;
+    }
     if (hitSummaryLabel) continue;
 
     if (isScaleGuideRow(row)) continue;
-    if (isSummaryRow(row)) continue;
     responseRowsWithIndex.push({
       row,
       excelRow: i + 1, // 엑셀 행 번호 (1-based)
