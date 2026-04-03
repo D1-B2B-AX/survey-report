@@ -627,6 +627,162 @@ function formatLocation(sheetName, rowNumber) {
 }
 
 // ============================================================
+// 병합 셀 처리
+// ============================================================
+
+/**
+ * 병합 셀을 고려하여 셀 값을 읽는다.
+ * 해당 셀에 값이 없으면 !merges를 확인하여 병합 시작 셀의 값을 반환한다.
+ *
+ * @param {object} worksheet - XLSX worksheet 객체
+ * @param {number} row - 행 (0-based)
+ * @param {number} col - 열 (0-based)
+ * @returns {*} 셀 값 (없으면 null)
+ */
+function getMergedCellValue(worksheet, row, col) {
+  const addr = XLSX.utils.encode_cell({ r: row, c: col });
+  const cell = worksheet[addr];
+  if (cell && cell.v !== undefined && cell.v !== null && cell.v !== '') return cell.v;
+
+  const merges = worksheet['!merges'] || [];
+  for (const range of merges) {
+    if (row >= range.s.r && row <= range.e.r &&
+        col >= range.s.c && col <= range.e.c) {
+      const startAddr = XLSX.utils.encode_cell({ r: range.s.r, c: range.s.c });
+      const startCell = worksheet[startAddr];
+      return startCell ? startCell.v : null;
+    }
+  }
+  return null;
+}
+
+/**
+ * 해당 행+열이 병합 범위의 시작 행이 아닌 연속 행인지 확인한다.
+ * (시작 행이면 false, 연속 행이면 true)
+ *
+ * @param {Array} merges - worksheet['!merges'] 배열
+ * @param {number} row - 행 (0-based)
+ * @param {number} col - 열 (0-based)
+ * @returns {boolean}
+ */
+function isMergeContinuation(merges, row, col) {
+  for (const m of merges) {
+    if (row > m.s.r && row <= m.e.r && col >= m.s.c && col <= m.e.c) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// ============================================================
+// 교육 개요 탭 읽기
+// ============================================================
+
+/** 교육 개요 과정 정보 키워드 */
+const OVERVIEW_COURSE_KEYWORDS = {
+  '과정명': /과정명/,
+  '교육형태': /교육\s*형태/,
+  '교육일정': /교육\s*일정/,
+  '교육장소': /교육\s*장소/,
+  '교육대상': /교육\s*대상/,
+  '교육시수': /교육\s*시수/,
+};
+
+/** 교육 개요 인원 섹션 키워드 (순서 중요 — 위에서 아래로 탐색) */
+const OVERVIEW_PEOPLE_KEYWORDS = [
+  { key: '기업담당자', pattern: /기업\s*담당자/ },
+  { key: 'FC담당자', pattern: /FC\s*담당자/ },
+  { key: '강사', pattern: /강사/ },
+  { key: '조교', pattern: /조교/ },
+];
+
+/**
+ * 교육 개요 탭을 읽어 구조화된 결과를 반환한다.
+ * 병합 셀을 자동으로 처리하여 LLM의 셀 재시도를 제거한다.
+ *
+ * @param {object} workbook - XLSX workbook 객체
+ * @returns {object} { found, tab, courseInfo, people }
+ */
+function readOverviewTab(workbook) {
+  const tabName = workbook.SheetNames.find(s => /교육\s*개요/.test(s));
+  if (!tabName) return { found: false, tab: null, courseInfo: {}, people: {} };
+
+  const ws = workbook.Sheets[tabName];
+  const merges = ws['!merges'] || [];
+  const ref = ws['!ref'] || 'A1';
+  const maxRow = Math.min(XLSX.utils.decode_range(ref).e.r, 30);
+
+  // ---- 1. 과정 정보: B열 라벨 키워드 → C열 값 (C:H 병합) ----
+  const courseInfo = {};
+  for (const [key, pattern] of Object.entries(OVERVIEW_COURSE_KEYWORDS)) {
+    for (let r = 0; r <= maxRow; r++) {
+      const bVal = getMergedCellValue(ws, r, 1); // B열
+      if (bVal && pattern.test(String(bVal))) {
+        const cVal = getMergedCellValue(ws, r, 2); // C열 (C:H 병합)
+        courseInfo[key] = cVal ? String(cVal).trim() : null;
+        break;
+      }
+    }
+  }
+
+  // ---- 2. 인원 섹션: B열 키워드로 섹션 시작 찾기 ----
+  // 주의: getMergedCellValue가 아닌 직접 셀 값만 확인한다.
+  // 병합 연속 행에서 같은 키워드가 중복 매칭되어 빈 배열로 덮어쓰는 버그 방지.
+  const sections = [];
+  for (let r = 0; r <= maxRow; r++) {
+    const addr = XLSX.utils.encode_cell({ r, c: 1 });
+    const cell = ws[addr];
+    if (!cell || cell.v === undefined || cell.v === null || cell.v === '') continue;
+    const bStr = String(cell.v).trim();
+    for (const { key, pattern } of OVERVIEW_PEOPLE_KEYWORDS) {
+      if (pattern.test(bStr)) {
+        // B열 병합 범위로 섹션 끝 행 결정
+        let endRow = r;
+        for (const m of merges) {
+          if (r >= m.s.r && r <= m.e.r && m.s.c === 1) {
+            endRow = m.e.r;
+            break;
+          }
+        }
+        sections.push({ key, label: bStr, startRow: r, endRow });
+      }
+    }
+  }
+
+  // ---- 3. 각 섹션의 인원 정보 읽기 ----
+  const people = {};
+  for (const section of sections) {
+    const entries = [];
+    for (let r = section.startRow; r <= section.endRow; r++) {
+      // C열 병합의 연속 행이면 스킵 (같은 사람의 2번째 행)
+      if (isMergeContinuation(merges, r, 2)) continue;
+
+      const name = getMergedCellValue(ws, r, 2);  // C열: 이름
+      if (!name || String(name).trim() === '-' || String(name).trim() === '') continue;
+
+      const role  = getMergedCellValue(ws, r, 3);  // D열: 직급/역할
+      const email = getMergedCellValue(ws, r, 4);  // E열: 이메일 (E:F 병합)
+      const phone = getMergedCellValue(ws, r, 6);  // G열: 전화 (G:H 병합)
+
+      entries.push({
+        name:  String(name).trim(),
+        role:  role  ? String(role).trim()  : null,
+        email: email ? String(email).trim() : null,
+        phone: phone ? String(phone).trim() : null,
+      });
+    }
+    // 같은 key가 이미 있으면 entries를 합침 (다중 강사 등)
+    if (people[section.key]) {
+      people[section.key].entries.push(...entries);
+    } else {
+      people[section.key] = { label: section.label, entries };
+    }
+  }
+
+  return { found: true, tab: tabName, courseInfo, people };
+}
+
+// ============================================================
 // 모듈 내보내기
 // ============================================================
 
@@ -653,6 +809,9 @@ module.exports = {
   isLikelyNonData,
   formatLocation,
   findHeaderRow,
+  getMergedCellValue,
+  // 교육 개요
+  readOverviewTab,
   // 상수 (테스트·확장용)
   BIPOLAR_KEYWORDS,
   BIPOLAR_LABELS,
@@ -662,3 +821,22 @@ module.exports = {
   QUESTION_SHORTNAME_PATTERNS,
   LIKELY_NON_DATA_PATTERNS,
 };
+
+// ============================================================
+// CLI 엔트리포인트
+// ============================================================
+
+if (require.main === module) {
+  const args = process.argv.slice(2);
+
+  if (args.includes('--overview')) {
+    const filePath = args.find(a => !a.startsWith('--'));
+    if (!filePath) {
+      console.error('Usage: node parse-sheet.js <파일경로> --overview');
+      process.exit(1);
+    }
+    const wb = readWorkbook(filePath);
+    const result = readOverviewTab(wb);
+    console.log(JSON.stringify(result, null, 2));
+  }
+}

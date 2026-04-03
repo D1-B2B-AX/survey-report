@@ -73,6 +73,10 @@
 # 환경 확인 (첫 실행 시 자동)
 cd ~/.claude/skills/report && node scripts/check-env.js
 
+# 교육 개요 탭 읽기 (강의관리 시트 — 병합 셀 자동 처리)
+# found:true → courseInfo + people JSON 반환 / found:false → 비표준 양식, 수동 탐색 fallback
+cd ~/.claude/skills/report && node scripts/parse-sheet.js "강의관리시트경로" --overview
+
 # 객관식 계산
 cd ~/.claude/skills/report && node scripts/calculate.js "파일경로" [시트명]
 
