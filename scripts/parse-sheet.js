@@ -96,6 +96,21 @@ const LIKELY_NON_DATA_PATTERNS = [
   /요약/i, /통계/i, /summary/i, /^index$/i,
 ];
 
+/** Long format 감지용 필수/선택 헤더 키워드 */
+const LONG_FORMAT_HEADERS = {
+  required: {
+    questionName: ['문항명'],
+    answer: ['답변내역', '답변'],
+  },
+  optional: {
+    questionSeq: ['문항순번', '문항번호'],
+    answerType: ['문항선택유형', '답변유형', '선택유형'],
+    instructor: ['강사명', '강사'],
+    answerLabel: ['답변지문', '답변 지문'],
+    purpose: ['설문목적'],
+  },
+};
+
 // ============================================================
 // 파일 읽기
 // ============================================================
@@ -194,7 +209,13 @@ function analyzeWorkbook(workbook, fileName) {
  * @returns {object|null} 시트 분석 결과 (데이터가 없으면 null)
  */
 function parseSheet(worksheet, sheetName, instructorsFromTabs) {
-  const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+  let rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+  // Long format 감지 → wide format으로 자동 피벗
+  const longFormatInfo = detectLongFormat(rawData);
+  if (longFormatInfo) {
+    rawData = pivotLongToWide(rawData, longFormatInfo);
+  }
 
   // 헤더 행 찾기 (첫 번째 비어있지 않은 행 중 문항 텍스트가 있는 행)
   const headerRowIndex = findHeaderRow(rawData);
@@ -502,6 +523,10 @@ function detectInstructorsFromTabs(sheetNames) {
  * @returns {string|null} 감지된 강사명 (없으면 null)
  */
 function detectInstructorFromQuestion(header) {
+  // Long format 피벗 후 "[강사명]" 접미사 패턴
+  const bracketMatch = header.match(/\[([가-힣]{2,4})\]\s*$/);
+  if (bracketMatch) return bracketMatch[1];
+
   // "OOO 강사" 패턴
   const match = header.match(/([가-힣]{2,4})\s*강사/);
   if (!match) return null;
@@ -542,6 +567,145 @@ function isOpenEndedByHeader(header) {
  */
 function isInfoQuestion(header) {
   return INFO_QUESTION_PATTERNS.some(pattern => pattern.test(header));
+}
+
+// ============================================================
+// Long Format 감지 & 피벗
+// ============================================================
+
+/**
+ * Long format 여부를 감지한다.
+ * Long format: 1행 = 1응답자 × 1문항 (wide format: 1행 = 1응답자 × 전체 문항)
+ *
+ * 감지 기준:
+ *   1) 헤더에 "문항명" + "답변내역" 열이 존재
+ *   2) 첫 번째 응답자가 여러 행에 반복 등장
+ *
+ * @param {Array[]} rawData - sheet_to_json 결과 (2차원 배열)
+ * @returns {object|null} 컬럼 인덱스 맵 또는 null
+ */
+function detectLongFormat(rawData) {
+  if (!rawData || rawData.length < 3) return null;
+  const headers = rawData[0];
+  if (!headers || !Array.isArray(headers)) return null;
+
+  const headerStrs = headers.map(h => String(h || '').trim());
+
+  const findCol = (keywords) => {
+    for (const kw of keywords) {
+      const idx = headerStrs.findIndex(h => h === kw);
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  };
+
+  // 필수: 문항명 + 답변내역
+  const questionNameIdx = findCol(LONG_FORMAT_HEADERS.required.questionName);
+  const answerIdx = findCol(LONG_FORMAT_HEADERS.required.answer);
+  if (questionNameIdx === -1 || answerIdx === -1) return null;
+
+  // 선택
+  const questionSeqIdx = findCol(LONG_FORMAT_HEADERS.optional.questionSeq);
+  const answerTypeIdx = findCol(LONG_FORMAT_HEADERS.optional.answerType);
+  const instructorIdx = findCol(LONG_FORMAT_HEADERS.optional.instructor);
+  const answerLabelIdx = findCol(LONG_FORMAT_HEADERS.optional.answerLabel);
+  const purposeIdx = findCol(LONG_FORMAT_HEADERS.optional.purpose);
+
+  // 응답자 ID 열 추정: long format 전용 열이 아닌 첫 번째 열
+  const usedIndices = new Set(
+    [questionNameIdx, answerIdx, questionSeqIdx, answerTypeIdx,
+     instructorIdx, answerLabelIdx, purposeIdx].filter(i => i >= 0)
+  );
+  let respondentIdx = -1;
+  for (let i = 0; i < headerStrs.length; i++) {
+    if (!usedIndices.has(i)) { respondentIdx = i; break; }
+  }
+  if (respondentIdx === -1) respondentIdx = 0;
+
+  // 검증: 동일 응답자가 2회 이상 반복 등장해야 long format
+  const firstVal = rawData[1] ? String(rawData[1][respondentIdx] || '') : '';
+  if (!firstVal) return null;
+  let repeatCount = 0;
+  const checkLimit = Math.min(rawData.length, 50);
+  for (let i = 1; i < checkLimit; i++) {
+    if (rawData[i] && String(rawData[i][respondentIdx] || '') === firstVal) repeatCount++;
+  }
+  if (repeatCount < 2) return null;
+
+  return {
+    respondentIdx, questionNameIdx, questionSeqIdx,
+    answerIdx, answerTypeIdx, instructorIdx, answerLabelIdx, purposeIdx,
+  };
+}
+
+/**
+ * Long format → wide format 피벗.
+ * 기존 parseSheet가 처리할 수 있는 2차원 배열(헤더+응답행)을 반환한다.
+ *
+ * - 강사명 열이 있고 값이 채워진 문항은 "[강사명]" 접미사로 분리
+ * - 답변내역을 그대로 보존 (숫자/문자열 타입 유지)
+ *
+ * @param {Array[]} rawData - long format 2차원 배열
+ * @param {object} colInfo - detectLongFormat 결과
+ * @returns {Array[]} wide format 2차원 배열
+ */
+function pivotLongToWide(rawData, colInfo) {
+  const { respondentIdx, questionNameIdx, answerIdx, instructorIdx } = colInfo;
+
+  // 1) 문항 순서 수집 (첫 등장 순)
+  const questionOrder = [];
+  const questionSet = new Set();
+
+  for (let i = 1; i < rawData.length; i++) {
+    const row = rawData[i];
+    if (!row) continue;
+    const qName = String(row[questionNameIdx] || '').trim();
+    if (!qName) continue;
+
+    const instructor = (instructorIdx >= 0 && row[instructorIdx])
+      ? String(row[instructorIdx]).trim() : '';
+    const key = instructor ? `${qName} [${instructor}]` : qName;
+
+    if (!questionSet.has(key)) {
+      questionSet.add(key);
+      questionOrder.push(key);
+    }
+  }
+
+  // 2) 응답자별 답변 수집
+  const respondentMap = new Map();
+  const respondentOrder = [];
+
+  for (let i = 1; i < rawData.length; i++) {
+    const row = rawData[i];
+    if (!row) continue;
+    const respondentId = String(row[respondentIdx] || '');
+    if (!respondentId) continue;
+
+    const qName = String(row[questionNameIdx] || '').trim();
+    if (!qName) continue;
+
+    const instructor = (instructorIdx >= 0 && row[instructorIdx])
+      ? String(row[instructorIdx]).trim() : '';
+    const key = instructor ? `${qName} [${instructor}]` : qName;
+
+    if (!respondentMap.has(respondentId)) {
+      respondentMap.set(respondentId, {});
+      respondentOrder.push(respondentId);
+    }
+    respondentMap.get(respondentId)[key] = row[answerIdx];
+  }
+
+  // 3) wide format 조립
+  const wideData = [questionOrder]; // 헤더
+  for (const rid of respondentOrder) {
+    const answers = respondentMap.get(rid);
+    wideData.push(questionOrder.map(k => {
+      const v = answers[k];
+      return (v !== undefined && v !== null) ? v : '';
+    }));
+  }
+  return wideData;
 }
 
 /**
@@ -809,6 +973,9 @@ module.exports = {
   // 강사 감지
   detectInstructorsFromTabs,
   detectInstructorFromQuestion,
+  // Long format
+  detectLongFormat,
+  pivotLongToWide,
   // 유틸리티
   isMetaColumn,
   isInfoQuestion,

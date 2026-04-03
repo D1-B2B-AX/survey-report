@@ -50,7 +50,7 @@
 - 블록 검토와 메일 미리보기를 **처음부터 함께** HTML 파일로 생성합니다.
 - **본문 분리 + 스크립트 조립**: LLM은 가변 본문만 임시 파일로 Write합니다. `scripts/generate-shell.js`의 조립 모드가 CSS/JS(head/tail) + 헤더(meta.json) + hidden 필드(meta.json)를 자동으로 붙여 최종 HTML을 생성합니다. **LLM은 `<style>`, `<script>`, `<!DOCTYPE>`, `<html>`, `<head>`, `<body>` 태그를 절대 작성하지 않습니다.**
 - **헤더**: generate-shell.js가 meta.json에서 자동 생성. 기업명(`company-name`, 16px 강조) + 과정명(큰 제목) + 부제(교육일시 | 강사명 | 응답인원). **LLM은 헤더를 작성하지 않습니다.**
-- **GAS 연동용 hidden 필드**: generate-shell.js가 meta.json에서 자동 삽입 (hidden-meta, hidden-start-time, hidden-html-created-time, hidden-phase5). OM에게 미표시.
+- **GAS 연동용 hidden 필드**: generate-shell.js가 meta.json에서 자동 삽입 (hidden-meta, hidden-start-time, hidden-html-created-time, hidden-phase5, hidden-plugin-version, hidden-mail-copied). OM에게 미표시. GAS 전송 순서: startTime → htmlCreatedTime → copyClickTime → company → course → date → instructor → respondents → omName → mailCopied → modified → modifiedAreas → phase5Log → pluginVersion
 - **블록 검토 탭**: sub-tab(객관식|주관식|운영진 의견)으로 영역 분리. sub-tab 위에 `review-description`(전체 설명) + `guide-banner`(수정 안내) 고정. 주관식/운영진 의견 sub-tab 안에 `context-notice`(맥락 설명, 배경 없이 텍스트 강조)
 - **메일 미리보기 탭**: sub-tab(기업담당자용|강사용)으로 분리. 메일 제목 한 줄 + 본문 (HTML 헤더 미표시). 복사 버튼 2개: "본문 복사"(secondary) + "전체 복사 (제목+본문)"(primary)
 - **HTML 자동 열기**: 생성 후 `node -e "require('child_process').exec('start ...')"` 로 브라우저에서 자동으로 엽니다. `start`를 Bash에서 직접 실행하지 않고 node로 감쌈

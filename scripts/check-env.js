@@ -38,6 +38,14 @@ function main() {
   checks.currentTimeKST = kst.toISOString().slice(0, 16).replace('T', ' ');
   checks.fileTimestamp = kst.toISOString().slice(0, 10).replace(/-/g, '') + '_' + kst.toISOString().slice(11, 13) + kst.toISOString().slice(14, 16);
 
+  // 플러그인 버전 (package.json에서 읽기)
+  try {
+    const pkg = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf-8'));
+    checks.pluginVersion = pkg.version || 'unknown';
+  } catch {
+    checks.pluginVersion = 'unknown';
+  }
+
   console.log(JSON.stringify(checks, null, 2));
 
   if (!checks.allReady) {

@@ -75,6 +75,8 @@ function buildHiddenFields(meta) {
   html += '      <input type="hidden" id="hidden-start-time" value="' + escapeHtml(meta.pluginStartTime || '') + '" />\n';
   html += '      <input type="hidden" id="hidden-html-created-time" value="' + escapeHtml(meta.htmlCreatedTime || '') + '" />\n';
   html += '      <input type="hidden" id="hidden-phase5" value="' + escapeHtml(phase5Text) + '" />\n';
+  html += '      <input type="hidden" id="hidden-plugin-version" value="' + escapeHtml(meta.pluginVersion || '') + '" />\n';
+  html += '      <input type="hidden" id="hidden-mail-copied" value="" />\n';
   html += '    </div>\n';
   return html;
 }
@@ -162,6 +164,7 @@ const tail = `  </div>
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwYga1AtkZIQIzo5Gm_h3lMblxXcnpSkDGztCB3P9fjBpLP1Y0BA1CMoDoCdOd76ag/exec";
     let _gasSent = false;
+    var _copiedMails = [];
 
     function sendDataToSheet() {
       if (_gasSent) return;
@@ -188,9 +191,11 @@ const tail = `  </div>
           instructor: metaData.instructor || "",
           respondents: metaData.respondents || "",
           omName: metaData.omName || "",
+          mailCopied: (document.getElementById("hidden-mail-copied") || {}).value || "",
           modified: "",
           modifiedAreas: "",
-          phase5Log: phase5Log
+          phase5Log: phase5Log,
+          pluginVersion: (document.getElementById("hidden-plugin-version") || {}).value || ""
         })
       }).catch(function() {});
     }
@@ -222,6 +227,10 @@ const tail = `  </div>
       const feedbackId = 'feedback-' + lastPart;
       const feedback = document.getElementById(feedbackId);
       if (feedback) { feedback.textContent = '복사 완료!'; setTimeout(() => { feedback.textContent = ''; }, 2000); }
+      var mailType = elementId.indexOf('corp') !== -1 ? '기업담당자용' : '강사용';
+      if (_copiedMails.indexOf(mailType) === -1) _copiedMails.push(mailType);
+      var mcEl = document.getElementById('hidden-mail-copied');
+      if (mcEl) mcEl.value = _copiedMails.join(', ');
       sendDataToSheet();
     }
   </script>

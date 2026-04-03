@@ -48,11 +48,13 @@ check-env.js 결과를 확인한 뒤, 아래 항목별로 대응합니다.
 check-env.js 출력 예시:
   "currentTime": "2026-04-02T07:30:00.000Z",
   "currentTimeKST": "2026-04-02 16:30",
-  "fileTimestamp": "20260402_1630"
+  "fileTimestamp": "20260402_1630",
+  "pluginVersion": "1.0.0"
 ```
 - `currentTime` → meta.json `pluginStartTime`에 저장
 - `fileTimestamp` → 이후 모든 파일명의 `{YYYYMMDD}_{HHMM}` 부분에 사용
 - `currentTimeKST` → 세션 로그의 시각 표기에 사용
+- `pluginVersion` → meta.json `pluginVersion`에 저장
 
 ---
 
@@ -214,6 +216,7 @@ OM이 확인 또는 수정하면 이 정보를 이후 모든 블록에서 사용
   "omName": "",
   "pluginStartTime": "2026-04-02T14:30:00.000Z",
   "htmlCreatedTime": "",
+  "pluginVersion": "",
   "phase5Log": []
 }
 ```
@@ -222,6 +225,7 @@ OM이 확인 또는 수정하면 이 정보를 이후 모든 블록에서 사용
   - `omName`: 현재는 빈 문자열. 향후 OM 이름 수집 기능 추가 시 여기에 저장. GAS 전송 시 함께 포함됨
   - `pluginStartTime`: Phase 0 check-env.js가 출력한 `currentTime` 값 (ISO 형식, 코드가 찍은 정확한 시각)
   - `htmlCreatedTime`: Phase 4.5에서 HTML 생성 시 채움
+  - `pluginVersion`: Phase 0 check-env.js가 출력한 `pluginVersion` 값 (package.json 버전)
   - `phase5Log`: Phase 5 수정 요청 시 누적 (최초 생성 시 빈 배열)
   - `reportScope`: "기업담당자용 + 강사용" / "강사용만" / "기업담당자용만"
 - **이후 Phase에서의 활용**:
@@ -737,6 +741,8 @@ Ralph 루프를 통과한 블록 데이터를 HTML 파일로 생성합니다. **
 | `hidden-start-time` | 플러그인 시작 시각 (ISO) | meta.json `pluginStartTime` |
 | `hidden-html-created-time` | HTML 생성 시각 (ISO, 스크립트 실행 시점에 자동 기록) | generate-shell.js가 생성 |
 | `hidden-phase5` | OM 수정요청 원문 (Phase 5 누적분) | meta.json `phase5Log` |
+| `hidden-plugin-version` | 플러그인 버전 (package.json) | meta.json `pluginVersion` |
+| `hidden-mail-copied` | 복사된 메일 유형 (기업담당자용, 강사용 등) | copyMail() JS에서 기록 |
 
 스크립트가 HTML entity 이스케이프(`"` → `&quot;`, `&` → `&amp;`, `'` → `&#39;`)를 자동 처리하므로 특수문자 걱정 불필요.
 
