@@ -136,7 +136,7 @@ const head = `<!DOCTYPE html>
     .filter-table th { background: #f5f5f5; font-size: 12px; }
     .filter-table td { font-size: 12px; }
     .mail-preview { padding: 20px; border: 1px solid #ddd; border-radius: 4px; background: #fff; font-size: 13px; line-height: 1.8; }
-    .mail-preview table { margin: 10px 0; }
+    .mail-preview table { margin: 10px 0; width: auto; }
     .mail-opinion { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e0e0e0; }
     .copy-btn { margin-top: 10px; padding: 10px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
     .copy-btn-primary { background: #4A90D9; color: #fff; }

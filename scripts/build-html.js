@@ -52,7 +52,7 @@ function buildScaleTable(items, positiveLabel, showPositive) {
     const tdPositive = showPositive ? `<td>${q.positiveRatio}%</td>` : '';
     return `<tr><td>${esc(q.shortName)}</td><td>${q.average} / ${q.maxScore}점</td>${tdPositive}</tr>`;
   }).join('\n');
-  return `<table>
+  return `<table style="width:auto;border-collapse:collapse;font-size:13px;">
 <thead><tr><th>문항</th><th>평균</th>${thPositive}</tr></thead>
 <tbody>${rows}</tbody>
 </table>`;
@@ -67,7 +67,7 @@ function buildBipolarTable(items, forMail) {
       : `${esc(d.low.label)}(1~2점) ${d.low.ratio}% · ${esc(d.mid.label)}(3점) ${d.mid.ratio}% · ${esc(d.high.label)}(4~5점) ${d.high.ratio}%`;
     return `<tr><td>${esc(q.shortName)}</td><td>${q.average} / 5점</td><td>${dist}</td></tr>`;
   }).join('\n');
-  return `<table style="margin-top:12px;">
+  return `<table style="width:auto;border-collapse:collapse;font-size:13px;margin-top:12px;">
 <thead><tr><th>문항</th><th>평균</th><th>분포</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`;
@@ -123,9 +123,9 @@ function buildBlock1Mail(block1, showPositive) {
     const s = block1[name];
     let html = '';
     if (sheets.length > 1) {
-      html += `<p${i > 0 ? ' style="margin-top:24px;"' : ''}><strong>■ ${esc(name)}</strong></p>`;
+      html += `<p style="font-size:13px;${i > 0 ? 'margin-top:24px;' : ''}"><strong>■ ${esc(name)}</strong></p>`;
     }
-    html += `<p>- 응답인원: ${s.respondentCount}명</p>`;
+    html += `<p style="font-size:13px;">- 응답인원: ${s.respondentCount}명</p>`;
     html += buildScaleTable(s.scale5, '4~5점', showPositive);
     html += buildScaleTable(s.scale10, '7~10점', showPositive);
     html += buildBipolarTable(s.bipolar, true);
@@ -268,12 +268,12 @@ function buildBlock2MailSummary(block2) {
   for (const cat of cats) {
     if (!cat.items || cat.items.length === 0) continue;
     const lines = cat.items.map(item => `- ${esc(item.label)}: ${esc(item.summary)}`).join('<br>\n');
-    html += `<p style="margin-top:16px;"><strong>${esc(cat.title)}</strong></p>\n<p>${lines}</p>\n`;
+    html += `<p style="margin-top:16px;font-size:13px;"><strong>${esc(cat.title)}</strong></p>\n<p style="font-size:13px;">${lines}</p>\n`;
   }
   if (block2.byQuestion && block2.byQuestion.length > 0) {
     for (const q of block2.byQuestion) {
       const items = (q.patterns || []).map(p => `- ${esc(p.label)}: ${esc(p.summary)}`).join('<br>\n');
-      html += `<p style="margin-top:16px;"><strong>📌 ${esc(q.question)}</strong></p>\n<p>${items}</p>\n`;
+      html += `<p style="margin-top:16px;font-size:13px;"><strong>📌 ${esc(q.question)}</strong></p>\n<p style="font-size:13px;">${items}</p>\n`;
     }
   }
   return html;
@@ -316,7 +316,7 @@ function buildBlock3_4Review(block3, block4) {
 /** 메일 — 운영진 의견 본문 */
 function buildOpinionMail(text) {
   const paragraphs = String(text).split(/\r?\n/).filter(p => p.trim());
-  return `<div class="mail-opinion">\n${paragraphs.map(p => `<p>${esc(p)}</p>`).join('\n')}\n</div>`;
+  return `<div class="mail-opinion">\n<p style="font-size:13px;"><strong>[운영진 의견]</strong></p>\n${paragraphs.map(p => `<p style="font-size:13px;">${esc(p)}</p>`).join('\n')}\n</div>`;
 }
 
 // ============================================================
@@ -335,24 +335,26 @@ function mailGreeting(type, instructorName) {
   const course = meta.course || '';
   const company = meta.company || '';
   if (type === 'corp') {
-    return `<p>담당자님, 안녕하세요!<br>패스트캠퍼스 OOO입니다.</p>
-<p>${esc(date)}에 진행된 ${esc(course)}의 만족도 조사 결과 공유드립니다.</p>`;
+    return `<p style="margin-bottom:20px;font-size:13px;">담당자님, 안녕하세요!<br>패스트캠퍼스 OOO입니다.</p>
+<p style="font-size:13px;">${esc(date)}에 진행된 ${esc(course)}의 만족도 조사 결과 공유드립니다.</p>`;
   }
-  return `<p>${esc(instructorName)} 강사님, 안녕하세요!<br>패스트캠퍼스 OOO입니다.</p>
-<p>${esc(date)}에 진행해주신 ${esc(company)} ${esc(course)}의 만족도 설문 결과를 정리하여 전달드립니다.</p>`;
+  return `<p style="margin-bottom:20px;font-size:13px;">${esc(instructorName)} 강사님, 안녕하세요!<br>패스트캠퍼스 OOO입니다.</p>
+<p style="font-size:13px;">${esc(date)}에 진행해주신 ${esc(company)} ${esc(course)}의 만족도 설문 결과를 정리하여 전달드립니다.</p>`;
 }
 
 function mailClosing(type) {
   if (type === 'corp') {
-    return `<p style="margin-top:20px;">만족도 결과 파일도 참고해보시고, 궁금하시거나 논의 필요한 내용은 추가로 의견 나눠보면 좋을 것 같습니다.</p>
-<p>감사합니다.<br>OOO 드림</p>`;
+    return `<p style="margin-top:20px;font-size:13px;">만족도 결과 파일도 참고해보시고, 궁금하시거나 논의 필요한 내용은 추가로 의견 나눠보면 좋을 것 같습니다.</p>
+<p style="margin-top:20px;font-size:13px;">감사합니다.<br>OOO 드림</p>`;
   }
-  return `<p style="margin-top:20px;">감사합니다.<br>OOO 드림</p>`;
+  return `<p style="margin-top:20px;font-size:13px;">감사합니다.<br>OOO 드림</p>`;
 }
 
 function buildMailContent(type, opinionText, instructorName) {
   let html = mailGreeting(type, instructorName);
+  html += '<p style="margin-top:20px;font-size:13px;"><strong>[객관식 설문 결과]</strong></p>\n';
   html += buildBlock1Mail(blocks.block1, type === 'corp');
+  html += '<p style="margin-top:24px;font-size:13px;"><strong>[주관식 의견]</strong></p>\n';
   html += buildBlock2MailSummary(blocks.block2);
   html += buildOpinionMail(opinionText);
   html += mailClosing(type);
@@ -371,8 +373,8 @@ function buildCopyButtons(bodyId, fullId) {
 
 function buildMailSubTab(id, subject, bodyContent) {
   return `<div class="mail-subject" id="mail-subject-${id}">${esc(subject)}</div>
-<div id="mail-body-${id}" class="mail-preview">${bodyContent}</div>
-<div id="mail-full-${id}" style="position:absolute;left:-9999px;"><p>${esc(subject)}</p>${bodyContent}</div>
+<div id="mail-body-${id}" class="mail-preview" style="font-size:13px;">${bodyContent}</div>
+<div id="mail-full-${id}" style="position:absolute;left:-9999px;"><p style="font-size:13px;">${esc(subject)}</p>${bodyContent}</div>
 ${buildCopyButtons('mail-body-' + id, 'mail-full-' + id)}`;
 }
 
