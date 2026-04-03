@@ -258,15 +258,27 @@ function main() {
       continue;
     }
 
-    const checks = [
-      checkRespondentCount(rawSheet, outputData),
-      checkQuestionNames(rawSheet, outputData),
-      checkScaleNotation(rawSheet, outputData),
-      checkRounding(outputData),
-      checkSubjectiveQuotesAll(allRawSubjectiveTexts, outputData),
-      checkManagementQuotesRaw(managementTexts, allRawSubjectiveTexts, outputData),
-      checkScoreCitationsAll(analysis.sheets, outputData),
-    ];
+    // 검증 1~4: 객관식 데이터(calculate.js 결과) 필요 — 없으면 SKIP
+    const hasQuestions = outputData.questions && outputData.questions.length > 0;
+    const checks = [];
+
+    if (hasQuestions) {
+      checks.push(checkRespondentCount(rawSheet, outputData));
+      checks.push(checkQuestionNames(rawSheet, outputData));
+      checks.push(checkScaleNotation(rawSheet, outputData));
+      checks.push(checkRounding(outputData));
+    } else {
+      const skip = (id, name) => ({ id, name, passed: true, skipped: true, detail: 'SKIP — 객관식 데이터 없음 (부분 검증 모드)' });
+      checks.push(skip(1, '응답자 수 일치'));
+      checks.push(skip(2, '문항명 매칭'));
+      checks.push(skip(3, '척도 표기 일치'));
+      checks.push(skip(4, '반올림 자릿수 통일'));
+    }
+
+    // 검증 5~7: calculate.js 결과와 무관 — 항상 실행
+    checks.push(checkSubjectiveQuotesAll(allRawSubjectiveTexts, outputData));
+    checks.push(checkManagementQuotesRaw(managementTexts, allRawSubjectiveTexts, outputData));
+    checks.push(checkScoreCitationsAll(analysis.sheets, outputData));
 
     sheetResults.push({
       sheetName: outputData.sheetName,
