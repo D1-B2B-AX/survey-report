@@ -504,8 +504,11 @@ function detectInstructorsFromTabs(sheetNames) {
 function detectInstructorFromQuestion(header) {
   // "OOO 강사" 패턴
   const match = header.match(/([가-힣]{2,4})\s*강사/);
-  if (match) return match[1];
-  return null;
+  if (!match) return null;
+  // 동사를 강사명으로 오인식하는 경우 제외 ("진행한 강사", "담당한 강사" 등)
+  const falsePositives = ['진행한', '담당한', '평가한', '수강한', '참여한', '교육한'];
+  if (falsePositives.includes(match[1])) return null;
+  return match[1];
 }
 
 // ============================================================
