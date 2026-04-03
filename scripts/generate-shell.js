@@ -173,7 +173,8 @@ const tail = `  </div>
       var startTime = (document.getElementById("hidden-start-time") || {}).value || "";
       var htmlCreatedTime = (document.getElementById("hidden-html-created-time") || {}).value || "";
       var phase5Log = (document.getElementById("hidden-phase5") || {}).value || "";
-      var copyClickTime = new Date().toISOString();
+      var now = new Date(Date.now() + 9 * 60 * 60 * 1000);
+      var copyClickTime = now.toISOString().slice(0, 16).replace('T', ' ');
 
       fetch(GAS_URL, {
         method: "POST",
@@ -256,7 +257,8 @@ if (bodyFilePath && outputFilePath) {
       const meta = JSON.parse(fs.readFileSync(metaFilePath, 'utf-8'));
 
       // htmlCreatedTime을 현재 시점으로 갱신하고 meta.json에 저장
-      meta.htmlCreatedTime = new Date().toISOString();
+      const nowKst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+      meta.htmlCreatedTime = nowKst.toISOString().slice(0, 16).replace('T', ' ');
       fs.writeFileSync(metaFilePath, JSON.stringify(meta, null, 2), 'utf-8');
 
       headerHtml = buildHeader(meta);
