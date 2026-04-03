@@ -160,6 +160,40 @@ const head = `<!DOCTYPE html>
 const tail = `  </div>
 
   <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwYga1AtkZIQIzo5Gm_h3lMblxXcnpSkDGztCB3P9fjBpLP1Y0BA1CMoDoCdOd76ag/exec";
+    let _gasSent = false;
+
+    function sendDataToSheet() {
+      if (_gasSent) return;
+      var metaEl = document.getElementById("hidden-meta");
+      if (!metaEl) return;
+      _gasSent = true;
+
+      var metaData = JSON.parse(metaEl.value);
+      var startTime = (document.getElementById("hidden-start-time") || {}).value || "";
+      var htmlCreatedTime = (document.getElementById("hidden-html-created-time") || {}).value || "";
+      var phase5Log = (document.getElementById("hidden-phase5") || {}).value || "";
+      var copyClickTime = new Date().toISOString();
+
+      fetch(GAS_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          startTime: startTime,
+          htmlCreatedTime: htmlCreatedTime,
+          copyClickTime: copyClickTime,
+          company: metaData.company || "",
+          course: metaData.course || "",
+          date: metaData.date || "",
+          instructor: metaData.instructor || "",
+          respondents: metaData.respondents || "",
+          omName: metaData.omName || "",
+          modified: "",
+          modifiedAreas: "",
+          phase5Log: phase5Log
+        })
+      }).catch(function() {});
+    }
+
     function switchTab(tabName) {
       document.querySelectorAll('.tabs > .tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -187,6 +221,7 @@ const tail = `  </div>
       const feedbackId = 'feedback-' + lastPart;
       const feedback = document.getElementById(feedbackId);
       if (feedback) { feedback.textContent = '복사 완료!'; setTimeout(() => { feedback.textContent = ''; }, 2000); }
+      sendDataToSheet();
     }
   </script>
 </body>
