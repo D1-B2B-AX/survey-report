@@ -76,6 +76,7 @@ function buildHiddenFields(meta) {
   html += '      <input type="hidden" id="hidden-html-created-time" value="' + escapeHtml(meta.htmlCreatedTime || '') + '" />\n';
   html += '      <input type="hidden" id="hidden-phase5" value="' + escapeHtml(phase5Text) + '" />\n';
   html += '      <input type="hidden" id="hidden-plugin-version" value="' + escapeHtml(meta.pluginVersion || '') + '" />\n';
+  html += '      <input type="hidden" id="hidden-estimated-manual-time" value="' + escapeHtml(meta.estimatedManualTime || '') + '" />\n';
   html += '      <input type="hidden" id="hidden-mail-copied" value="" />\n';
   html += '    </div>\n';
   return html;
@@ -218,7 +219,8 @@ const tail = `  </div>
           modified: "",
           modifiedAreas: "",
           phase5Log: phase5Log,
-          pluginVersion: (document.getElementById("hidden-plugin-version") || {}).value || ""
+          pluginVersion: (document.getElementById("hidden-plugin-version") || {}).value || "",
+          estimatedManualTime: (document.getElementById("hidden-estimated-manual-time") || {}).value || ""
         })
       }).catch(function() {});
     }
