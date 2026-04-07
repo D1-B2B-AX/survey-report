@@ -233,6 +233,7 @@ OM이 확인 또는 수정하면 이 정보를 이후 모든 블록에서 사용
   "reportScope": "기업담당자용 + 강사용",
   "omName": "",
   "estimatedManualTime": "",
+  "rawDataFileName": "KT_AI Campus_설문조사.xlsx",
   "pluginStartTime": "2026-04-02T07:30:00.000Z",
   "htmlCreatedTime": "",
   "pluginVersion": "",
@@ -242,6 +243,7 @@ OM이 확인 또는 수정하면 이 정보를 이후 모든 블록에서 사용
 - **필드 규칙**:
   - 미확인 항목은 빈 문자열 `""` (null이 아님)
   - `estimatedManualTime`: Phase 1-4에서 수집한 값(예: "10~20분"). 질문 전에 비정상 종료된 경우에만 빈 문자열
+  - `rawDataFileName`: Phase 1-0에서 OM이 전달한 raw data 파일 경로에서 파일명만 추출 (예: "KT_AI Campus_설문조사.xlsx"). 기업담당자용 메일 본문의 "첨부." 안내에 사용
   - `omName`: 빈 문자열로 생성. 복사 버튼 클릭 시 모달에서 OM이 직접 입력 → hidden-meta에 반영 → GAS 전송
   - `pluginStartTime`: Phase 0 check-env.js가 출력한 `currentTime` 값 (ISO 형식, 코드가 찍은 정확한 시각)
   - `htmlCreatedTime`: Phase 4.5에서 HTML 생성 시 채움

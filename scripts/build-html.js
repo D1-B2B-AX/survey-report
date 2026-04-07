@@ -129,6 +129,7 @@ function buildBlock1Mail(block1, showPositive) {
     html += buildScaleTable(s.scale5, '4~5점', showPositive);
     html += buildScaleTable(s.scale10, '7~10점', showPositive);
     html += buildBipolarTable(s.bipolar, true);
+    html += buildSelectionTable(s.selection);
     return html;
   }).join('\n');
 }
@@ -334,9 +335,11 @@ function mailGreeting(type, instructorName) {
   const date = meta.date || '';
   const course = meta.course || '';
   const company = meta.company || '';
+  const rawDataFile = meta.rawDataFileName || '';
+  const attachLine = rawDataFile ? `<p style="font-size:13px;">첨부. ${esc(rawDataFile)}</p>` : '';
   if (type === 'corp') {
     return `<p style="margin-bottom:20px;font-size:13px;">담당자님, 안녕하세요!<br>패스트캠퍼스 OOO입니다.</p>
-<p style="font-size:13px;">${esc(date)}에 진행된 ${esc(course)}의 만족도 조사 결과 공유드립니다.</p>`;
+<p style="font-size:13px;">${esc(date)}에 진행된 ${esc(course)}의 만족도 조사 결과 공유드립니다.</p>${attachLine}`;
   }
   return `<p style="margin-bottom:20px;font-size:13px;">${esc(instructorName)} 강사님, 안녕하세요!<br>패스트캠퍼스 OOO입니다.</p>
 <p style="font-size:13px;">${esc(date)}에 진행해주신 ${esc(company)} ${esc(course)}의 만족도 설문 결과를 정리하여 전달드립니다.</p>`;
