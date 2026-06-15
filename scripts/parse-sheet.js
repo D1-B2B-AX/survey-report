@@ -288,6 +288,46 @@ function parseSheet(worksheet, sheetName, instructorsFromTabs) {
     });
   }
 
+  // ── shortName 후처리 ──────────────────────────────────────
+
+  // (a) shortName이 instructor와 동일하면 강사 브라켓 제거 후 재추출
+  //     long format 피벗 시 [강사명] 접미사가 shortName이 되는 문제 방지
+  for (const q of questions) {
+    if (q.instructor && q.shortName === q.instructor) {
+      const stripped = q.header.replace(/\s*\[[가-힣]{2,4}\]\s*$/, '');
+      q.shortName = extractShortName(stripped);
+    }
+  }
+
+  // (b) 동일 shortName 중복 해소
+  const nameCount = {};
+  for (const q of questions) nameCount[q.shortName] = (nameCount[q.shortName] || 0) + 1;
+
+  for (const [dupName, count] of Object.entries(nameCount)) {
+    if (count <= 1) continue;
+    const dupes = questions.filter(q => q.shortName === dupName);
+
+    // 전략 1: 강사명이 서로 다르면 강사명으로 구분
+    const distinctInstructors = [...new Set(dupes.map(q => q.instructor).filter(Boolean))];
+    if (distinctInstructors.length === dupes.length) {
+      for (const q of dupes) q.shortName = `${q.shortName} (${q.instructor})`;
+      continue;
+    }
+
+    // 전략 2: 문항 번호 접미사로 구분 (예: "14-1." / "14-2." → "14-1" / "14-2")
+    const prefixes = dupes.map(q => {
+      const m = q.header.match(/^([\d]+[-.][\d]+)/);
+      return m ? m[1] : null;
+    });
+    if (prefixes.every(Boolean) && new Set(prefixes).size === dupes.length) {
+      for (let i = 0; i < dupes.length; i++) dupes[i].shortName = `${dupes[i].shortName} (${prefixes[i]})`;
+      continue;
+    }
+
+    // 전략 3: 순번 fallback
+    for (let i = 0; i < dupes.length; i++) dupes[i].shortName = `${dupes[i].shortName} (${i + 1})`;
+  }
+
   // 탭 기반 강사 매칭
   const tabInstructor = instructorsFromTabs.find(name => sheetName.includes(name)) || null;
 
